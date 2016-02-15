@@ -1,0 +1,158 @@
+<dom-module id="my-torrent">
+    <style>
+        a {
+            @apply(--paper-font-button);
+        }
+
+        #remove {
+            color: var(--dark-accent-color);
+        }
+
+        .name {
+            @apply(--paper-font-title);
+        }
+
+        .flex-horizontal {
+            @apply(--layout-horizontal);
+        }
+
+        .flexchild {
+            @apply(--layout-flex);
+        }
+    </style>
+    <template>
+
+        <paper-item class="container flex-horizontal">
+            <paper-item-body two-line class="flexchild">
+                <div class="name">{{ torrent.name }} - {{ torrent.size }}</div>
+                <div secondary>
+                    <paper-progress value="{{ info.percentage }}"></paper-progress>
+                    {{ info.timeLeft }}
+                </div>
+            </paper-item-body>
+            <paper-button active="{{ showDetails }}" raised toggles disabled="{{!torrent.loaded}}">
+                Details
+            </paper-button>
+            <paper-button on-click="openFolder" raised disabled="{{!torrent.loaded}}">
+                Open
+            </paper-button>
+            <paper-button id="remove" on-click="remove" disabled="{{!torrent.loaded}}">
+                Remove
+            </paper-button>
+        </paper-item>
+
+        <div hidden$="{{ !showDetails }}">
+            <template is="dom-repeat" items="{{ torrent.files }}">
+                <paper-item class="container flex-horizontal">
+                    <paper-item-body class="flexchild">
+                        <div>{{ item.name }} - {{ item.size }}</div>
+                    </paper-item-body>
+                </paper-item>
+            </template>
+        </div>
+
+    </template>
+    <script>
+        'use strict';
+
+        var humanSize = require('human-format');
+        var bytes = require('pretty-bytes');
+        var prettySeconds = require('pretty-seconds');
+        var open = require('open');
+
+        Polymer({
+            is: 'my-torrent',
+            properties: {
+                torrent: Object,
+                db: Object
+            },
+            remove: function () {
+                // clean up files
+                this.engine.remove();
+
+                this.fire('remove');
+            },
+            openFolder: function() {
+                open(this.engine.path);
+            },
+            ready: function () {
+                var _this = this;
+                _this.showDetails = false;
+                _this.info = {};
+
+                _this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + _this.torrent.infoHash);
+
+                _this.engine.on('ready', function () {
+                    // save metadata
+                    if (!_this.torrent.loaded) {
+                        _this.set('torrent.loaded', true);
+                        _this.set('torrent.files', []);
+                        _this.set('torrent.size', humanSize(_this.engine.torrent.length));
+
+                        _this.engine.files.forEach(function (file) {
+                            _this.push('torrent.files', {
+                                name: file.name,
+                                size: humanSize(file.length)
+                            });
+                        });
+
+                        _this.db.write();
+                    }
+
+                    // start things up
+                    _this.set('info.timeStart', (new Date()).getTime());
+                    _this.engine.files.forEach(function (file) {
+                        file.select();
+                    });
+
+                    // compute status
+                    _this.loopStatus()
+                });
+            },
+            loopStatus: function () {
+                var _this = this;
+
+                // quantity and speed
+                _this.set('info.down', bytes(_this.engine.swarm.downloaded));
+                _this.set('info.downSpeed', bytes(_this.engine.swarm.downloadSpeed()) + '/s');
+                _this.set('info.up', bytes(_this.engine.swarm.uploaded));
+                _this.set('info.upSpeed', bytes(_this.engine.swarm.uploadSpeed()) + '/s');
+
+                // progression
+                var percentage = ((_this.engine.swarm.downloaded / _this.engine.torrent.length) * 100).toPrecision(4);
+                if (percentage > 100) {
+                    percentage = 100;
+                }
+                _this.set('info.percentage', percentage);
+
+                // peers
+                _this.set('info.peers', _this.engine.swarm.wires.length);
+                _this.set('info.activePeers', _this.engine.swarm.wires.filter(function (wire) {
+                    return !wire.peerChoking;
+                }).length);
+
+                // Time left = (TimeTaken / bytesDownloaded) * bytesLeft
+                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded;
+                if (_this.engine.swarm.downloaded > 0) {
+                    if (_this.engine.swarm.downloadSpeed() > 0) {
+                        var seconds = 1000;
+                        var timeNow = (new Date()).getTime();
+                        var timeElapsed = timeNow - _this.info.timeStart;
+                        var timeRemaining = (((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining) / seconds).toPrecision(6)
+                        timeRemaining = 'Estimated ' + prettySeconds(~~timeRemaining) + ' remaining'
+                    } else {
+                        timeRemaining = 'Unknown time remaining'
+                    }
+                } else {
+                    timeRemaining = 'Calculating'
+                }
+                _this.set('info.timeLeft', timeRemaining);
+
+                // register next status
+                setTimeout(function () {
+                    _this.loopStatus();
+                }, 500);
+            }
+        });
+    </script>
+</dom-module>

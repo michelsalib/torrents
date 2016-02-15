@@ -1,0 +1,24 @@
+{
+  "name": "torrents",
+  "version": "1.0.0",
+  "description": "Best torrent client ever",
+  "main": "index.html",
+  "author": "Michel Salib",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michelsalib/torrents.git"
+  },
+  "dependencies": {
+    "human-format": "^0.6.0",
+    "lowdb": "^0.12.2",
+    "open": "0.0.5",
+    "pretty-bytes": "^3.0.1",
+    "pretty-seconds": "^0.1.3",
+    "read-torrent": "^1.3.0",
+    "torrent-stream": "^1.0.2"
+  },
+  "scripts": {
+    "postinstall": "bower install"
+  }
+}

@@ -1,0 +1,123 @@
+<dom-module id="my-torrents">
+    <style>
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        :host {
+            @apply(--paper-font-title);
+        }
+
+        #title {
+            transition: background-color 0.4s ease;
+        }
+        #title.highlighted {
+            --paper-toolbar-background: var(--accent-color);
+        }
+    </style>
+    <template>
+
+        <paper-toolbar id="title">
+            <span class="title">Torrents</span>
+        </paper-toolbar>
+
+
+        <template is="dom-repeat" items="{{torrents}}">
+            <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}"></my-torrent>
+        </template>
+
+        <div hidden$="{{torrents.length}}">
+            Drag magnet or .torrent here
+        </div>
+
+    </template>
+    <script>
+        'use strict';
+
+        Polymer({
+            is: 'my-torrents',
+            listeners: {
+                dragover: 'onDragOver',
+                dragleave: 'onDragLeave',
+                drop: 'onDrop'
+            },
+            remove: function (e) {
+                var index = this.torrents.indexOf(e.model.item);
+                this.splice('torrents', index, 1);
+                this.db.write();
+
+                e.preventDefault();
+                return false;
+            },
+            ready: function () {
+                // load db
+                var low = require('lowdb');
+                var storage = require('lowdb/file-sync'); // blocking impl
+                this.db = low('db.json', {storage});
+
+                // load torrents, bind to low lever array collection, setting default value to []
+                this.torrents = this.db.object.torrents = this.db.object.torrents || [];
+            },
+            onDragOver: function (e) {
+                this.$.title.classList.add('highlighted');
+                this.updateStyles();
+
+                return false;
+            },
+            onDragLeave: function (e) {
+                this.$.title.classList.remove('highlighted');
+                this.updateStyles();
+
+                return false;
+            },
+            onDrop: function (e) {
+                var _this = this;
+                this.$.title.classList.remove('highlighted');
+                this.updateStyles();
+
+                for (let i = 0; i < e.dataTransfer.items.length; ++i) {
+                    var item = e.dataTransfer.items[i];
+
+                    switch (item.type) {
+                        case 'text/uri-list':
+                            item.getAsString(function (s) {
+                                _this.add(s);
+                            });
+
+                            break;
+                    }
+                }
+
+                for (let i = 0; i < e.dataTransfer.files.length; ++i) {
+                    var file = e.dataTransfer.files[i];
+
+                    switch (file.type) {
+                        case 'application/x-bittorrent':
+                            _this.add(file.path);
+
+                            break;
+                    }
+                }
+
+                e.preventDefault();
+                return false;
+            },
+            add: function (path) {
+                var _this = this;
+
+                require('read-torrent')(path, function (err, torrent) {
+                    var t = {
+                        name: torrent.name,
+                        infoHash: torrent.infoHash,
+                        loaded: false
+                    };
+
+                    _this.push('torrents', t);
+                    _this.db.write();
+                });
+            }
+        });
+    </script>
+</dom-module>
