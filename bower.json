@@ -13,5 +13,8 @@
     "paper-button": "PolymerElements/paper-button#^1.0.11",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.2.3",
     "paper-progress": "PolymerElements/paper-progress#^1.0.8"
+  },
+  "resolutions": {
+    "polymer": "^1.2.1"
   }
 }

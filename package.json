@@ -2,7 +2,7 @@
   "name": "torrents",
   "version": "1.0.0",
   "description": "Best torrent client ever",
-  "main": "index.html",
+  "main": "index.js",
   "author": "Michel Salib",
   "license": "MIT",
   "repository": {
@@ -10,6 +10,7 @@
     "url": "https://github.com/michelsalib/torrents.git"
   },
   "dependencies": {
+    "electron-prebuilt": "^0.36.7",
     "human-format": "^0.6.0",
     "lowdb": "^0.12.2",
     "open": "0.0.5",
@@ -19,6 +20,7 @@
     "torrent-stream": "^1.0.2"
   },
   "scripts": {
-    "postinstall": "bower install"
+    "postinstall": "bower install",
+    "start": "electron index.js"
   }
 }
