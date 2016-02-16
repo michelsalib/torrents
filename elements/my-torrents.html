@@ -92,7 +92,7 @@
                     switch (item.type) {
                         case 'text/uri-list':
                             item.getAsString(function (s) {
-                                _this.add(s);
+                                _this.add(encodeURI(s));
                             });
 
                             break;
