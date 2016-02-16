@@ -18,11 +18,15 @@
         #title.highlighted {
             --paper-toolbar-background: var(--accent-color);
         }
+        #close {
+            -webkit-app-region: no-drag;
+        }
     </style>
     <template>
 
         <paper-toolbar id="title">
             <span class="title">Torrents</span>
+            <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
         </paper-toolbar>
 
 
@@ -44,6 +48,9 @@
                 dragover: 'onDragOver',
                 dragleave: 'onDragLeave',
                 drop: 'onDrop'
+            },
+            close: function() {
+                window.close();
             },
             remove: function (e) {
                 var index = this.torrents.indexOf(e.model.item);
