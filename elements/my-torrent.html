@@ -23,29 +23,37 @@
     <template>
 
         <paper-item class="container flex-horizontal">
+
             <paper-item-body two-line class="flexchild">
-                <div class="name">{{ torrent.name }} - {{ torrent.size }}</div>
+                <div class="name">{{ torrent.name }} - {{ torrent.size }} - {{ info.downSpeed }} - {{ info.activePeers }}/{{ info.peers }}</div>
                 <div secondary>
-                    <paper-progress value="{{ info.percentage }}"></paper-progress>
-                    {{ info.timeLeft }}
+                    <paper-progress value="{{ info.progress }}" indeterminate="{{ info.verifying }}"></paper-progress>
+                    {{ info.status }}
                 </div>
             </paper-item-body>
-            <paper-button active="{{ showDetails }}" raised toggles disabled="{{!torrent.loaded}}">
-                Details
-            </paper-button>
-            <paper-button on-click="openFolder" raised disabled="{{!torrent.loaded}}">
-                Open
-            </paper-button>
-            <paper-button id="remove" on-click="remove" disabled="{{!torrent.loaded}}">
-                Remove
-            </paper-button>
+
+            <paper-icon-button icon="more-horiz" id="details" active="{{ showDetails }}" toggles
+                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+            <paper-tooltip for="details">Details</paper-tooltip>
+
+            <paper-icon-button icon="folder-open" id="open" on-click="openFolder"
+                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+            <paper-tooltip for="open">Open</paper-tooltip>
+
+            <paper-icon-button icon="clear" id="remove" on-click="remove"
+                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+            <paper-tooltip for="remove">Remove</paper-tooltip>
+
         </paper-item>
 
         <div hidden$="{{ !showDetails }}">
             <template is="dom-repeat" items="{{ torrent.files }}">
                 <paper-item class="container flex-horizontal">
-                    <paper-item-body class="flexchild">
+                    <paper-item-body class="flexchild" two-line>
                         <div>{{ item.name }} - {{ item.size }}</div>
+                        <div secondary>
+                            <paper-progress value="{{ item.progress }}"></paper-progress>
+                        </div>
                     </paper-item-body>
                 </paper-item>
             </template>
@@ -59,6 +67,8 @@
         var bytes = require('pretty-bytes');
         var prettySeconds = require('pretty-seconds');
         var open = require('open');
+        var fs = require('fs');
+        var path = require('path');
 
         Polymer({
             is: 'my-torrent',
@@ -72,15 +82,21 @@
 
                 this.fire('remove');
             },
-            openFolder: function() {
+            openFolder: function () {
                 open(this.engine.path);
             },
             ready: function () {
                 var _this = this;
                 _this.showDetails = false;
-                _this.info = {};
+                _this.info = {
+                    verifying: true
+                };
 
                 _this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + _this.torrent.infoHash);
+
+                _this.engine.on('verifying', function () {
+                    _this.set('info.status', 'Verifying...');
+                });
 
                 _this.engine.on('ready', function () {
                     // save metadata
@@ -101,6 +117,7 @@
 
                     // start things up
                     _this.set('info.timeStart', (new Date()).getTime());
+                    _this.set('info.verifying', false);
                     _this.engine.files.forEach(function (file) {
                         file.select();
                     });
@@ -112,18 +129,24 @@
             loopStatus: function () {
                 var _this = this;
 
+                // progress
+                var progress = 0;
+                _this.engine.files.forEach(function (f, i) {
+                    var stat = fs.statSync(path.join(_this.engine.path, f.path));
+
+                    var p = stat.size * 100 / f.length;
+
+                    progress += p;
+
+                    _this.set('torrent.files.' + i + '.progress', p);
+                });
+                _this.set('info.progress', progress / _this.torrent.files.length);
+
                 // quantity and speed
                 _this.set('info.down', bytes(_this.engine.swarm.downloaded));
                 _this.set('info.downSpeed', bytes(_this.engine.swarm.downloadSpeed()) + '/s');
                 _this.set('info.up', bytes(_this.engine.swarm.uploaded));
                 _this.set('info.upSpeed', bytes(_this.engine.swarm.uploadSpeed()) + '/s');
-
-                // progression
-                var percentage = ((_this.engine.swarm.downloaded / _this.engine.torrent.length) * 100).toPrecision(4);
-                if (percentage > 100) {
-                    percentage = 100;
-                }
-                _this.set('info.percentage', percentage);
 
                 // peers
                 _this.set('info.peers', _this.engine.swarm.wires.length);
@@ -133,20 +156,23 @@
 
                 // Time left = (TimeTaken / bytesDownloaded) * bytesLeft
                 var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded;
-                if (_this.engine.swarm.downloaded > 0) {
+                var status = 'Calculating';
+                if (!_this.engine.amInterested) {
+                    status = 'Done';
+                }
+                else if (_this.engine.swarm.downloaded > 0) {
                     if (_this.engine.swarm.downloadSpeed() > 0) {
                         var seconds = 1000;
                         var timeNow = (new Date()).getTime();
                         var timeElapsed = timeNow - _this.info.timeStart;
-                        var timeRemaining = (((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining) / seconds).toPrecision(6)
-                        timeRemaining = 'Estimated ' + prettySeconds(~~timeRemaining) + ' remaining'
-                    } else {
-                        timeRemaining = 'Unknown time remaining'
+                        status = (((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining) / seconds).toPrecision(6)
+                        status = 'Estimated ' + prettySeconds(~~status) + ' remaining';
                     }
-                } else {
-                    timeRemaining = 'Calculating'
+                    else {
+                        status = 'Unknown time remaining';
+                    }
                 }
-                _this.set('info.timeLeft', timeRemaining);
+                _this.set('info.status', status);
 
                 // register next status
                 setTimeout(function () {
