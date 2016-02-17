@@ -130,17 +130,18 @@
                 var _this = this;
 
                 // progress
-                var progress = 0;
+                var downloaded = 0;
                 _this.engine.files.forEach(function (f, i) {
-                    var stat = fs.statSync(path.join(_this.engine.path, f.path));
+                    var size = fs.statSync(path.join(_this.engine.path, f.path)).size;
 
-                    var p = stat.size * 100 / f.length;
+                    downloaded += size;
 
-                    progress += p;
-
-                    _this.set('torrent.files.' + i + '.progress', p);
+                    _this.set('torrent.files.' + i + '.progress', size * 100 / f.length);
                 });
-                _this.set('info.progress', progress / _this.torrent.files.length);
+                _this.set('info.progress', downloaded * 100 / _this.engine.torrent.length);
+                if (_this.info.downloaded == undefined) {
+                    _this.set('info.downloaded', downloaded);
+                }
 
                 // quantity and speed
                 _this.set('info.down', bytes(_this.engine.swarm.downloaded));
@@ -155,7 +156,7 @@
                 }).length);
 
                 // Time left = (TimeTaken / bytesDownloaded) * bytesLeft
-                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded;
+                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded - _this.info.downloaded;
                 var status = 'Calculating';
                 if (!_this.engine.amInterested) {
                     status = 'Done';

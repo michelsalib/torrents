@@ -118,7 +118,7 @@
 
                 require('read-torrent')(path, function (err, torrent) {
                     var t = {
-                        name: torrent.name,
+                        name: decodeURIComponent(torrent.name),
                         infoHash: torrent.infoHash,
                         loaded: false
                     };
