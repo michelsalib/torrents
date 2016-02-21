@@ -25,23 +25,23 @@
         <paper-item class="container flex-horizontal">
 
             <paper-item-body two-line class="flexchild">
-                <div class="name">{{ torrent.name }} - {{ torrent.size }} - {{ info.downSpeed }} - {{ info.activePeers }}/{{ info.peers }}</div>
+                <div class="name">{{ torrent.name }} - {{ bytes(torrent.length) }} - {{ bytes(info.downloadSpeed) }}/s - {{ info.activePeers }}/{{ info.peers }}</div>
                 <div secondary>
-                    <paper-progress value="{{ info.progress }}" indeterminate="{{ info.verifying }}"></paper-progress>
-                    {{ info.status }}
+                    <paper-progress value="{{ info.progress }}" indeterminate="{{ !info.ready }}"></paper-progress>
+                    {{ info.status }} {{ info.estimation }}
                 </div>
             </paper-item-body>
 
             <paper-icon-button icon="more-horiz" id="details" active="{{ showDetails }}" toggles
-                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+                               disabled="{{ !torrent.loaded }}"></paper-icon-button>
             <paper-tooltip for="details">Details</paper-tooltip>
 
             <paper-icon-button icon="folder-open" id="open" on-click="openFolder"
-                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+                               disabled="{{ !info.ready }}"></paper-icon-button>
             <paper-tooltip for="open">Open</paper-tooltip>
 
             <paper-icon-button icon="clear" id="remove" on-click="remove"
-                               disabled="{{!torrent.loaded}}"></paper-icon-button>
+                               disabled="{{ !info.ready }}"></paper-icon-button>
             <paper-tooltip for="remove">Remove</paper-tooltip>
 
         </paper-item>
@@ -50,7 +50,7 @@
             <template is="dom-repeat" items="{{ torrent.files }}">
                 <paper-item class="container flex-horizontal">
                     <paper-item-body class="flexchild" two-line>
-                        <div>{{ item.name }} - {{ item.size }}</div>
+                        <div>{{ item.name }} - {{ bytes(item.length) }}</div>
                         <div secondary>
                             <paper-progress value="{{ item.progress }}"></paper-progress>
                         </div>
@@ -63,7 +63,6 @@
     <script>
         'use strict';
 
-        var humanSize = require('human-format');
         var bytes = require('pretty-bytes');
         var prettySeconds = require('pretty-seconds');
         var open = require('open');
@@ -75,6 +74,12 @@
             properties: {
                 torrent: Object,
                 db: Object
+            },
+            status: {
+                METADATA: 'Fetching metadata...',
+                VERIFYING: 'Verifying...',
+                DOWNLOADING: 'Downloading...',
+                SEEDING: 'Seeding'
             },
             remove: function () {
                 // clean up files
@@ -89,35 +94,68 @@
                 var _this = this;
                 _this.showDetails = false;
                 _this.info = {
-                    verifying: true
+                    status: _this.status.METADATA,
+                    downloaded: 0,
+                    progress: 0,
+                    ready: false
                 };
 
                 _this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + _this.torrent.infoHash);
 
                 _this.engine.on('verifying', function () {
-                    _this.set('info.status', 'Verifying...');
-                });
+                    _this.set('info.status', _this.status.VERIFYING);
 
-                _this.engine.on('ready', function () {
                     // save metadata
                     if (!_this.torrent.loaded) {
                         _this.set('torrent.loaded', true);
                         _this.set('torrent.files', []);
-                        _this.set('torrent.size', humanSize(_this.engine.torrent.length));
+                        _this.set('torrent.length', _this.engine.torrent.length);
 
                         _this.engine.files.forEach(function (file) {
                             _this.push('torrent.files', {
                                 name: file.name,
-                                size: humanSize(file.length)
+                                length: file.length,
+                                start: file.offset
                             });
                         });
 
                         _this.db.write();
                     }
 
+                    // reset files
+                    _this.engine.torrent.files.forEach(function(file, index) {
+                        _this.set('torrent.files.' + index + '.downloaded', 0);
+                        _this.set('torrent.files.' + index + '.progress', 0);
+                    });
+                });
+
+                _this.engine.on('verify', function(index) {
+                    var pieceLength = index == _this.engine.torrent.pieces.length - 1 ? _this.engine.torrent.lastPieceLength :  _this.engine.torrent.pieceLength;
+                    var pieceStart = index * _this.engine.torrent.pieceLength;
+
+                    // attribute downloaded size to files
+                    _this.torrent.files.forEach(function(file, index) {
+                        var contained = Math.max(0, Math.min(pieceLength + pieceStart, file.start + file.length) - Math.max(file.start, pieceStart));
+
+                        if (contained) {
+                            _this.set('torrent.files.' + index + '.downloaded', file.downloaded + contained);
+                            _this.set('torrent.files.' + index + '.progress', file.downloaded * 100 / file.length);
+                        }
+                    });
+
+                    // compute total progress
+                    if (_this.info.status == _this.status.VERIFYING) {
+                        _this.set('info.downloaded', _this.info.downloaded + pieceLength);
+                        _this.set('info.progress', _this.info.downloaded * 100 / _this.torrent.length);
+                    }
+                });
+
+                _this.engine.on('ready', function () {
                     // start things up
                     _this.set('info.timeStart', (new Date()).getTime());
-                    _this.set('info.verifying', false);
+                    _this.set('info.downloadedStart', _this.info.downloaded);
+                    _this.set('info.status', _this.status.DOWNLOADING);
+                    _this.set('info.ready', true);
                     _this.engine.files.forEach(function (file) {
                         file.select();
                     });
@@ -129,25 +167,11 @@
             loopStatus: function () {
                 var _this = this;
 
-                // progress
-                var downloaded = 0;
-                _this.engine.files.forEach(function (f, i) {
-                    var size = fs.statSync(path.join(_this.engine.path, f.path)).size;
-
-                    downloaded += size;
-
-                    _this.set('torrent.files.' + i + '.progress', size * 100 / f.length);
-                });
-                _this.set('info.progress', downloaded * 100 / _this.engine.torrent.length);
-                if (_this.info.downloaded == undefined) {
-                    _this.set('info.downloaded', downloaded);
-                }
-
                 // quantity and speed
-                _this.set('info.down', bytes(_this.engine.swarm.downloaded));
-                _this.set('info.downSpeed', bytes(_this.engine.swarm.downloadSpeed()) + '/s');
-                _this.set('info.up', bytes(_this.engine.swarm.uploaded));
-                _this.set('info.upSpeed', bytes(_this.engine.swarm.uploadSpeed()) + '/s');
+                _this.set('info.downloaded', _this.info.downloadedStart + _this.engine.swarm.downloaded);
+                _this.set('info.downloadSpeed', _this.engine.swarm.downloadSpeed());
+                _this.set('info.uploaded', _this.engine.swarm.uploaded);
+                _this.set('info.uploadSpeed', _this.engine.swarm.uploadSpeed());
 
                 // peers
                 _this.set('info.peers', _this.engine.swarm.wires.length);
@@ -156,29 +180,35 @@
                 }).length);
 
                 // Time left = (TimeTaken / bytesDownloaded) * bytesLeft
-                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded - _this.info.downloaded;
-                var status = 'Calculating';
+                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded - _this.info.downloadedStart;
+                var estimation = 'Calculating';
                 if (!_this.engine.amInterested) {
-                    status = 'Done';
+                    estimation = 'Done';
                 }
                 else if (_this.engine.swarm.downloaded > 0) {
                     if (_this.engine.swarm.downloadSpeed() > 0) {
-                        var seconds = 1000;
-                        var timeNow = (new Date()).getTime();
-                        var timeElapsed = timeNow - _this.info.timeStart;
-                        status = (((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining) / seconds).toPrecision(6)
-                        status = 'Estimated ' + prettySeconds(~~status) + ' remaining';
+                        var timeElapsed = ((new Date()).getTime() - _this.info.timeStart) / 1000;
+                        estimation = ((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining).toPrecision(6);
+                        estimation = 'Estimated ' + prettySeconds(~~estimation) + ' remaining';
                     }
                     else {
-                        status = 'Unknown time remaining';
+                        estimation = 'Unknown time remaining';
                     }
                 }
-                _this.set('info.status', status);
+                _this.set('info.estimation', estimation);
+
 
                 // register next status
                 setTimeout(function () {
                     _this.loopStatus();
                 }, 500);
+            },
+            bytes: function(b) {
+                if (typeof b == 'undefined') {
+                    return '-';
+                }
+
+                return bytes(b);
             }
         });
     </script>
