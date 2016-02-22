@@ -1,0 +1,47 @@
+<dom-module id="my-video">
+    <template>
+
+        <video autoplay controls>
+            <source src="http://localhost:12300" type="video/mp4"/>
+        </video>
+
+    </template>
+    <script>
+        var http = require('http');
+        var mime = require('mime');
+        var rangeParser = require('range-parser');
+        var pump = require('pump');
+
+        Polymer({
+            is: 'my-video',
+            properties: {
+                file: Object
+            },
+            ready: function () {
+                var _this = this;
+                var server = http.createServer();
+
+                server.on('request', function (request, response) {
+                    var range = request.headers.range;
+                    range = range && rangeParser(_this.file.length, range)[0];
+                    response.setHeader('Accept-Ranges', 'bytes');
+                    response.setHeader('Content-Type', mime.lookup(_this.file.name));
+                    response.setHeader('transferMode.dlna.org', 'Streaming');
+                    response.setHeader('contentFeatures.dlna.org', 'DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=017000 00000000000000000000000000');
+
+                    response.statusCode = 206;
+                    response.setHeader('Content-Length', range.end - range.start + 1);
+                    response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + _this.file.length);
+
+                    pump(_this.file.createReadStream(range), response);
+                });
+
+                server.on('connection', function (socket) {
+                    socket.setTimeout(36000000)
+                });
+
+                server.listen(12300);
+            }
+        });
+    </script>
+</dom-module>

@@ -31,7 +31,11 @@
 
 
         <template is="dom-repeat" items="{{torrents}}">
-            <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}"></my-torrent>
+            <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
+        </template>
+
+        <template is="dom-if" if="{{file}}">
+            <my-video file="{{ file }}" />
         </template>
 
         <div hidden$="{{torrents.length}}">
@@ -59,6 +63,9 @@
 
                 e.preventDefault();
                 return false;
+            },
+            play: function(e, file) {
+                this.set('file', file);
             },
             ready: function () {
                 // load db

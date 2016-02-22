@@ -25,7 +25,9 @@
         <paper-item class="container flex-horizontal">
 
             <paper-item-body two-line class="flexchild">
-                <div class="name">{{ torrent.name }} - {{ bytes(torrent.length) }} - {{ bytes(info.downloadSpeed) }}/s - {{ info.activePeers }}/{{ info.peers }}</div>
+                <div class="name">{{ torrent.name }} - {{ bytes(torrent.length) }} - {{ bytes(info.downloadSpeed) }}/s -
+                    {{ info.activePeers }}/{{ info.peers }}
+                </div>
                 <div secondary>
                     <paper-progress value="{{ info.progress }}" indeterminate="{{ !info.ready }}"></paper-progress>
                     {{ info.status }} {{ info.estimation }}
@@ -55,6 +57,9 @@
                             <paper-progress value="{{ item.progress }}"></paper-progress>
                         </div>
                     </paper-item-body>
+
+                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play"></paper-icon-button>
+                    <paper-tooltip for="play">Play</paper-tooltip>
                 </paper-item>
             </template>
         </div>
@@ -90,6 +95,9 @@
             openFolder: function () {
                 open(this.engine.path);
             },
+            play: function(event) {
+                this.fire('play', this.engine.files[event.model.index]);
+            },
             ready: function () {
                 var _this = this;
                 _this.showDetails = false;
@@ -124,18 +132,18 @@
                     }
 
                     // reset files
-                    _this.engine.torrent.files.forEach(function(file, index) {
+                    _this.engine.torrent.files.forEach(function (file, index) {
                         _this.set('torrent.files.' + index + '.downloaded', 0);
                         _this.set('torrent.files.' + index + '.progress', 0);
                     });
                 });
 
-                _this.engine.on('verify', function(index) {
-                    var pieceLength = index == _this.engine.torrent.pieces.length - 1 ? _this.engine.torrent.lastPieceLength :  _this.engine.torrent.pieceLength;
+                _this.engine.on('verify', function (index) {
+                    var pieceLength = index == _this.engine.torrent.pieces.length - 1 ? _this.engine.torrent.lastPieceLength : _this.engine.torrent.pieceLength;
                     var pieceStart = index * _this.engine.torrent.pieceLength;
 
                     // attribute downloaded size to files
-                    _this.torrent.files.forEach(function(file, index) {
+                    _this.torrent.files.forEach(function (file, index) {
                         var contained = Math.max(0, Math.min(pieceLength + pieceStart, file.start + file.length) - Math.max(file.start, pieceStart));
 
                         if (contained) {
@@ -205,7 +213,7 @@
                     _this.loopStatus();
                 }, 500);
             },
-            bytes: function(b) {
+            bytes: function (b) {
                 if (typeof b == 'undefined') {
                     return '-';
                 }
