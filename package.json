@@ -10,6 +10,7 @@
     "url": "https://github.com/michelsalib/torrents.git"
   },
   "dependencies": {
+    "bower": "^1.7.7",
     "electron-prebuilt": "^0.36.7",
     "lowdb": "^0.12.2",
     "mime": "^1.3.4",
