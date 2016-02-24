@@ -4,10 +4,9 @@
             display: block;
             height: 100%;
             width: 100%;
-        }
 
-        :host {
             @apply(--paper-font-title);
+            @apply(--layout-vertical);
         }
 
         #title {
@@ -15,11 +14,25 @@
             -webkit-user-select: none;
             -webkit-app-region: drag;
         }
+
         #title.highlighted {
             --paper-toolbar-background: var(--accent-color);
         }
+
+        #content {
+            @apply(--layout-flex);
+            @apply(--layout-horizontal);
+            @apply(--layout-center-justified);
+        }
+
         #close {
             -webkit-app-region: no-drag;
+        }
+
+        #help {
+            color: var(--secondary-text-color);
+            @apply(--paper-font-subhead);
+            @apply(--layout-self-center);
         }
     </style>
     <template>
@@ -29,18 +42,25 @@
             <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
         </paper-toolbar>
 
+        <section id="content">
+            <template is="dom-repeat" items="{{torrents}}">
+                <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
+            </template>
 
-        <template is="dom-repeat" items="{{torrents}}">
-            <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
-        </template>
+            <template is="dom-if" if="{{display('video', torrents, file)}}">
+                <my-video file="{{ file }}"/>
+            </template>
 
-        <template is="dom-if" if="{{file}}">
-            <my-video file="{{ file }}" />
-        </template>
+            <template is="dom-if" if="{{display('help', torrents, file)}}">
+                <div id="help">
+                    Drag magnet or .torrent here
+                </div>
+            </template>
+        </section>
 
-        <div hidden$="{{torrents.length}}">
-            Drag magnet or .torrent here
-        </div>
+        <my-dropper id="dropper" with-backdrop>
+            WAAAA
+        </my-dropper>
 
     </template>
     <script>
@@ -49,11 +69,9 @@
         Polymer({
             is: 'my-torrents',
             listeners: {
-                dragover: 'onDragOver',
-                dragleave: 'onDragLeave',
-                drop: 'onDrop'
+                dragover: 'onDragOver'
             },
-            close: function() {
+            close: function () {
                 window.close();
             },
             remove: function (e) {
@@ -64,10 +82,22 @@
                 e.preventDefault();
                 return false;
             },
-            play: function(e, file) {
+            play: function (e, file) {
                 this.set('file', file);
             },
+            display: function (mode) {
+                switch (mode) {
+                    case 'help':
+                        return !this.torrents.length && !this.file;
+                    case 'video':
+                        return !!this.file;
+                }
+
+                return true;
+            },
             ready: function () {
+                var _this = this;
+
                 // load db
                 var low = require('lowdb');
                 var storage = require('lowdb/file-sync'); // blocking impl
@@ -75,23 +105,23 @@
 
                 // load torrents, bind to low lever array collection, setting default value to []
                 this.torrents = this.db.object.torrents = this.db.object.torrents || [];
+                this.file = null;
+
+                document.addEventListener('mouseout', function () {
+                    _this.$.dropper.close();
+                    _this.$.title.classList.remove('highlighted');
+                    _this.updateStyles();
+                }, true);
             },
             onDragOver: function (e) {
+                this.$.dropper.open();
                 this.$.title.classList.add('highlighted');
-                this.updateStyles();
-
-                return false;
-            },
-            onDragLeave: function (e) {
-                this.$.title.classList.remove('highlighted');
                 this.updateStyles();
 
                 return false;
             },
             onDrop: function (e) {
                 var _this = this;
-                this.$.title.classList.remove('highlighted');
-                this.updateStyles();
 
                 for (let i = 0; i < e.dataTransfer.items.length; ++i) {
                     var item = e.dataTransfer.items[i];
