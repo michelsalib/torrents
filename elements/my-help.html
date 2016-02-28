@@ -1,0 +1,30 @@
+<dom-module id="my-help">
+
+    <style>
+        :host {
+            @apply(--layout-horizontal);
+            @apply(--layout-center-justified);
+        }
+
+        #help {
+            color: var(--secondary-text-color);
+            @apply(--paper-font-subhead);
+            @apply(--layout-self-center);
+        }
+    </style>
+
+    <template>
+        <div id="help">
+            Drag magnet or .torrent here
+        </div>
+    </template>
+
+</dom-module>
+
+<script>
+    'use strict';
+
+    Polymer({
+        is: 'my-help'
+    });
+</script>

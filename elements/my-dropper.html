@@ -1,0 +1,71 @@
+<dom-module id="my-dropper">
+
+    <style>
+        :host {
+            @apply(--layout-horizontal);
+            @apply(--layout-center-justified);
+        }
+
+        #content {
+            @apply(--layout-self-center);
+        }
+
+        #download {
+            --paper-card-background-color: var(--primary-color);
+            --paper-card-header-color: var(--dark-theme-text-color);
+        }
+    </style>
+
+    <template>
+        <section id="content">
+            <paper-card heading="Download" id="download"></paper-card>
+        </section>
+    </template>
+
+</dom-module>
+
+<script>
+    'use strict';
+
+    Polymer({
+        is: 'my-dropper',
+        listeners: {
+            drop: 'close',
+            'download.drop': 'onDrop'
+        },
+        close: function() {
+            this.fire('dropped');
+        },
+        onDrop: function (e) {
+            var _this = this;
+
+            for (let i = 0; i < e.dataTransfer.items.length; ++i) {
+                var item = e.dataTransfer.items[i];
+
+                switch (item.type) {
+                    case 'text/uri-list':
+                        item.getAsString(function (s) {
+                            _this.fire('dropped', encodeURI(s));
+                        });
+
+                        break;
+                }
+            }
+
+            for (let i = 0; i < e.dataTransfer.files.length; ++i) {
+                var file = e.dataTransfer.files[i];
+
+                switch (file.type) {
+                    case 'application/x-bittorrent':
+                        _this.fire('dropped', file.path);
+
+                        break;
+                }
+            }
+
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>

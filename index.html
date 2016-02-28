@@ -5,7 +5,7 @@
     <title>Torrents</title>
 
     <link rel="import" href="bower_components/polymer/polymer.html"/>
-    <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html"/>
+    <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html"/>
     <link rel="import" href="bower_components/iron-icons/iron-icons.html"/>
     <link rel="import" href="bower_components/iron-icons/av-icons.html"/>
     <link rel="import" href="bower_components/paper-styles/paper-styles.html"/>
@@ -15,10 +15,13 @@
     <link rel="import" href="bower_components/paper-progress/paper-progress.html"/>
     <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html"/>
     <link rel="import" href="bower_components/paper-tooltip/paper-tooltip.html"/>
+    <link rel="import" href="bower_components/paper-card/paper-card.html"/>
 
     <link rel="import" href="elements/my-torrent.html">
     <link rel="import" href="elements/my-torrents.html">
     <link rel="import" href="elements/my-video.html">
+    <link rel="import" href="elements/my-dropper.html">
+    <link rel="import" href="elements/my-help.html"/>
 
     <style>
         html, body {
@@ -27,6 +30,8 @@
 
             padding: 0;
             margin: 0;
+
+            overflow: hidden;
         }
     </style>
     <script>

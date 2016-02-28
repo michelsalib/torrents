@@ -4,10 +4,9 @@
             display: block;
             height: 100%;
             width: 100%;
-        }
 
-        :host {
             @apply(--paper-font-title);
+            @apply(--layout-vertical);
         }
 
         #title {
@@ -15,9 +14,22 @@
             -webkit-user-select: none;
             -webkit-app-region: drag;
         }
+
         #title.highlighted {
             --paper-toolbar-background: var(--accent-color);
         }
+
+        #content {
+            @apply(--layout-flex);
+            position: relative;
+        }
+
+        #content > * {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
         #close {
             -webkit-app-region: no-drag;
         }
@@ -29,18 +41,23 @@
             <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
         </paper-toolbar>
 
+        <section id="content">
+            <template is="dom-repeat" items="{{ torrents }}">
+                <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
+            </template>
 
-        <template is="dom-repeat" items="{{torrents}}">
-            <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
-        </template>
+            <template is="dom-if" if="{{ file }}">
+                <my-video file="{{ file }}"/>
+            </template>
 
-        <template is="dom-if" if="{{file}}">
-            <my-video file="{{ file }}" />
-        </template>
+            <template is="dom-if" if="{{ displayHelp }}">
+                <my-help />
+            </template>
 
-        <div hidden$="{{torrents.length}}">
-            Drag magnet or .torrent here
-        </div>
+            <template is="dom-if" if="{{ dragCounter }}">
+                <my-dropper id="dropper" on-dropped="add"/>
+            </template>
+        </section>
 
     </template>
     <script>
@@ -49,11 +66,10 @@
         Polymer({
             is: 'my-torrents',
             listeners: {
-                dragover: 'onDragOver',
-                dragleave: 'onDragLeave',
-                drop: 'onDrop'
+                'content.dragenter': 'onDragEnter',
+                'content.dragleave': 'onDragLeave'
             },
-            close: function() {
+            close: function () {
                 window.close();
             },
             remove: function (e) {
@@ -61,13 +77,20 @@
                 this.splice('torrents', index, 1);
                 this.db.write();
 
+                if (this.torrents.length == 0) {
+                    this.displayHelp = true;
+                }
+
                 e.preventDefault();
                 return false;
             },
-            play: function(e, file) {
+            play: function (e, file) {
                 this.set('file', file);
             },
             ready: function () {
+                this.dragCounter = 0;
+                this.displayHelp = false;
+
                 // load db
                 var low = require('lowdb');
                 var storage = require('lowdb/file-sync'); // blocking impl
@@ -75,53 +98,41 @@
 
                 // load torrents, bind to low lever array collection, setting default value to []
                 this.torrents = this.db.object.torrents = this.db.object.torrents || [];
+                this.file = null;
             },
-            onDragOver: function (e) {
-                this.$.title.classList.add('highlighted');
-                this.updateStyles();
+            onDragEnter: function (e) {
+                this.dragCounter++;
+
+                if (this.dragCounter == 1) {
+                    this.$.title.classList.add('highlighted');
+                    this.updateStyles();
+                }
 
                 return false;
             },
             onDragLeave: function (e) {
-                this.$.title.classList.remove('highlighted');
-                this.updateStyles();
+                var _this = this;
+
+                setTimeout(function() {
+                    _this.dragCounter--;
+                    if (_this.dragCounter == 0) {
+                        _this.$.title.classList.remove('highlighted');
+                        _this.updateStyles();
+                    }
+                }, 100);
 
                 return false;
             },
-            onDrop: function (e) {
+            add: function (e, path) {
                 var _this = this;
-                this.$.title.classList.remove('highlighted');
-                this.updateStyles();
 
-                for (let i = 0; i < e.dataTransfer.items.length; ++i) {
-                    var item = e.dataTransfer.items[i];
+                _this.dragCounter = 0;
+                _this.$.title.classList.remove('highlighted');
+                _this.updateStyles();
 
-                    switch (item.type) {
-                        case 'text/uri-list':
-                            item.getAsString(function (s) {
-                                _this.add(encodeURI(s));
-                            });
-
-                            break;
-                    }
+                if (typeof path != 'string') {
+                    return;
                 }
-
-                for (let i = 0; i < e.dataTransfer.files.length; ++i) {
-                    var file = e.dataTransfer.files[i];
-
-                    switch (file.type) {
-                        case 'application/x-bittorrent':
-                            _this.add(file.path);
-
-                            break;
-                    }
-                }
-
-                e.preventDefault();
-                return false;
-            },
-            add: function (path) {
-                var _this = this;
 
                 require('read-torrent')(path, function (err, torrent) {
                     var t = {
@@ -132,6 +143,8 @@
 
                     _this.push('torrents', t);
                     _this.db.write();
+
+                    _this.displayHelp = false;
                 });
             }
         });
