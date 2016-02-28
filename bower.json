@@ -15,8 +15,7 @@
     "paper-progress": "PolymerElements/paper-progress#^1.0.8",
     "paper-icon-button": "PolymerElements/paper-icon-button#~1.0.6",
     "paper-tooltip": "PolymerElements/paper-tooltip#^1.1.1",
-    "paper-card": "PolymerElements/paper-card#^1.1.1",
-    "iron-overlay-behavior": "PolymerElements/iron-overlay-behavior#^1.4.1"
+    "paper-card": "PolymerElements/paper-card#^1.1.1"
   },
   "resolutions": {
     "polymer": "^1.2.1"
