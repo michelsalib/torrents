@@ -15,10 +15,6 @@
             -webkit-app-region: drag;
         }
 
-        #title.highlighted {
-            --paper-toolbar-background: var(--accent-color);
-        }
-
         #content {
             @apply(--layout-flex);
             position: relative;
@@ -54,9 +50,7 @@
                 <my-help />
             </template>
 
-            <template is="dom-if" if="{{ dragCounter }}">
-                <my-dropper id="dropper" on-dropped="add"/>
-            </template>
+            <my-dropper id="dropper" on-dropped="add" hidden$="{{hideDropper}}"/>
         </section>
 
     </template>
@@ -67,7 +61,25 @@
             is: 'my-torrents',
             listeners: {
                 'content.dragenter': 'onDragEnter',
-                'content.dragleave': 'onDragLeave'
+                'content.dragleave': 'onDragLeave',
+                'neon-animation-finish': 'onAnimationFinished'
+            },
+            behaviors: [
+                Polymer.NeonAnimationRunnerBehavior
+            ],
+            properties: {
+                animationConfig: {
+                    value: function() {
+                        return {
+                            'open-dropper': [
+                                { animatable: this.$.dropper, type: 'entry'}
+                            ],
+                            'close-dropper': [
+                                { animatable: this.$.dropper, type: 'exit'}
+                            ]
+                        }
+                    }
+                }
             },
             close: function () {
                 window.close();
@@ -89,7 +101,7 @@
             },
             ready: function () {
                 this.dragCounter = 0;
-                this.displayHelp = false;
+                this.hideDropper = true;
 
                 // load db
                 var low = require('lowdb');
@@ -99,13 +111,14 @@
                 // load torrents, bind to low lever array collection, setting default value to []
                 this.torrents = this.db.object.torrents = this.db.object.torrents || [];
                 this.file = null;
+                this.displayHelp = !this.torrents.length;
             },
             onDragEnter: function (e) {
                 this.dragCounter++;
 
                 if (this.dragCounter == 1) {
-                    this.$.title.classList.add('highlighted');
-                    this.updateStyles();
+                    this.hideDropper = false;
+                    this.playAnimation('open-dropper');
                 }
 
                 return false;
@@ -116,8 +129,9 @@
                 setTimeout(function() {
                     _this.dragCounter--;
                     if (_this.dragCounter == 0) {
-                        _this.$.title.classList.remove('highlighted');
-                        _this.updateStyles();
+                        _this.playAnimation('close-dropper', function() {
+                            _this.hideDropper = true;
+                        });
                     }
                 }, 100);
 
@@ -127,8 +141,9 @@
                 var _this = this;
 
                 _this.dragCounter = 0;
-                _this.$.title.classList.remove('highlighted');
-                _this.updateStyles();
+                this.playAnimation('close-dropper', function() {
+                    _this.hideDropper = true;
+                });
 
                 if (typeof path != 'string') {
                     return;
@@ -146,6 +161,11 @@
 
                     _this.displayHelp = false;
                 });
+            },
+            onAnimationFinished: function(e, arg) {
+                if (typeof arg == 'function') {
+                    arg.call(this);
+                }
             }
         });
     </script>

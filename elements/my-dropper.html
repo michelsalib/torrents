@@ -1,9 +1,9 @@
 <dom-module id="my-dropper">
-
     <style>
         :host {
             @apply(--layout-horizontal);
             @apply(--layout-center-justified);
+            background: white;
         }
 
         #content {
@@ -32,6 +32,28 @@
         listeners: {
             drop: 'close',
             'download.drop': 'onDrop'
+        },
+        behaviors: [
+            Polymer.NeonAnimationRunnerBehavior
+        ],
+        properties: {
+            animationConfig: {
+                value: function() {
+                    return {
+                        'entry': {
+                            name: 'fade-in-animation',
+                            node: this
+                        },
+                        'exit': {
+                            name: 'slide-down-animation',
+                            node: this
+                        }
+                    }
+                }
+            }
+        },
+        ready: function() {
+
         },
         close: function() {
             this.fire('dropped');
