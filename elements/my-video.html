@@ -1,9 +1,29 @@
 <dom-module id="my-video">
+
+    <style>
+        :host {
+            @apply(--layout-horizontal);
+        }
+
+        #video {
+            background: var(--dark-theme-background-color);
+            width: 100%;
+            height: 100%;
+        }
+
+        #close {
+            --paper-icon-button-ink-color: var(--dark-theme-base-color);
+            color: var(--accent-color);
+            position: absolute;
+            right: 0;
+        }
+    </style>
+
     <template>
 
-        <video autoplay controls>
-            <source src="http://localhost:12300" type="video/mp4"/>
-        </video>
+        <video controls id="video"></video>
+
+        <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
 
     </template>
     <script>
@@ -15,13 +35,38 @@
         Polymer({
             is: 'my-video',
             properties: {
-                file: Object
+                file: {
+                    type: Object,
+                    notify: true
+                }
+            },
+            listeners: {
+                'file-changed': 'fileChanged'
+            },
+            close: function() {
+                this.fire('close');
+            },
+            fileChanged: function(e, change) {
+                if (!change.value) {
+                    this.$.video.innerHtml = '';
+
+                    return;
+                }
+
+                var source = document.createElement('source');
+                source.src= "http://localhost:12300";
+                source.type= "video/mp4";
+
+                this.$.video.appendChild(source);
+                this.$.video.load();
+                this.$.video.play();
             },
             ready: function () {
                 var _this = this;
                 var server = http.createServer();
 
                 server.on('request', function (request, response) {
+
                     var range = request.headers.range;
                     range = range && rangeParser(_this.file.length, range)[0];
                     response.setHeader('Accept-Ranges', 'bytes');
@@ -33,6 +78,13 @@
                     response.setHeader('Content-Length', range.end - range.start + 1);
                     response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + _this.file.length);
 
+                    console.log('req', range);
+                    response.on('finish', function() {
+                        console.log('reqend', range);
+                    })
+                    response.on('unpipe', function() {
+                        console.log('requnpipe', range);
+                    })
                     pump(_this.file.createReadStream(range), response);
                 });
 
@@ -41,6 +93,10 @@
                 });
 
                 server.listen(12300);
+
+                this.fileChanged(null, {
+                    value: this.file
+                });
             }
         });
     </script>

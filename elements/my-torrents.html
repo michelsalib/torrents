@@ -38,12 +38,14 @@
         </paper-toolbar>
 
         <section id="content">
-            <template is="dom-repeat" items="{{ torrents }}">
-                <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
-            </template>
+            <section id="list">
+                <template is="dom-repeat" items="{{ torrents }}">
+                    <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
+                </template>
+            </section>
 
             <template is="dom-if" if="{{ file }}">
-                <my-video file="{{ file }}"/>
+                <my-video file="{{ file }}" on-close="stop"/>
             </template>
 
             <template is="dom-if" if="{{ displayHelp }}">
@@ -97,7 +99,10 @@
                 return false;
             },
             play: function (e, file) {
-                this.set('file', file);
+                this.file = file;
+            },
+            stop: function (e, file) {
+                this.file = null;
             },
             ready: function () {
                 this.dragCounter = 0;
