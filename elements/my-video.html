@@ -28,7 +28,6 @@
     </template>
     <script>
         var http = require('http');
-        var mime = require('mime');
         var rangeParser = require('range-parser');
         var pump = require('pump');
 
@@ -46,18 +45,19 @@
             close: function() {
                 this.fire('close');
             },
-            fileChanged: function(e, change) {
-                if (!change.value) {
-                    this.$.video.innerHtml = '';
+            fileChanged: function() {
+                if (!this.file) {
+                    this.$.video.removeChild(this.source);
+                    this.$.video.pause();
 
                     return;
                 }
 
-                var source = document.createElement('source');
-                source.src= "http://localhost:12300";
-                source.type= "video/mp4";
+                this.source = document.createElement('source');
+                this.source.src = "http://localhost:12300";
+                this.source.type= 'video/mp4';
 
-                this.$.video.appendChild(source);
+                this.$.video.appendChild(this.source);
                 this.$.video.load();
                 this.$.video.play();
             },
@@ -94,9 +94,7 @@
 
                 server.listen(12300);
 
-                this.fileChanged(null, {
-                    value: this.file
-                });
+                this.fileChanged();
             }
         });
     </script>

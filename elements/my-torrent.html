@@ -58,7 +58,7 @@
                         </div>
                     </paper-item-body>
 
-                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play"></paper-icon-button>
+                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play" hidden$="{{ item.isNotVideo }}"></paper-icon-button>
                     <paper-tooltip for="play">Play</paper-tooltip>
                 </paper-item>
             </template>
@@ -73,6 +73,7 @@
         var open = require('open');
         var fs = require('fs');
         var path = require('path');
+        var mime = require('mime');
 
         Polymer({
             is: 'my-torrent',
@@ -121,10 +122,14 @@
                         _this.set('torrent.length', _this.engine.torrent.length);
 
                         _this.engine.files.forEach(function (file) {
+                            var type = mime.lookup(file.name);
+
                             _this.push('torrent.files', {
                                 name: file.name,
                                 length: file.length,
-                                start: file.offset
+                                start: file.offset,
+                                type: type,
+                                isNotVideo: type.split('/')[0] != 'video'
                             });
                         });
 
