@@ -1,0 +1,40 @@
+<dom-module id="my-search-results">
+    <style>
+        .title {
+            @apply(--paper-font-title);
+        }
+
+        .result {
+            @apply(--paper-font-subhead);
+            width: 100%;
+            text-align: left;
+        }
+    </style>
+
+    <template>
+        <div class="title">{{ title }}</div>
+
+        <template is="dom-repeat" items="{{ results }}">
+            <div>
+                <paper-button class="result" on-click="onClick">{{ item.name }}</paper-button>
+            </div>
+        </template>
+
+    </template>
+
+</dom-module>
+
+<script>
+    'use strict';
+
+    Polymer({
+        is: 'my-search-results',
+        properties: {
+            title: String,
+            results: Array
+        },
+        onClick: function (e) {
+            this.fire('result', e.model.item);
+        }
+    });
+</script>

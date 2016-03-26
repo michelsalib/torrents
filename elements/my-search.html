@@ -1,0 +1,172 @@
+<dom-module id="my-search">
+    <style>
+        :host {
+            background: white;
+        }
+
+        .row {
+            @apply(--layout-horizontal);
+            @apply(--layout-start);
+        }
+
+        #search {
+            @apply(--layout-flex);
+            margin: 0 8px;
+        }
+
+        .row#close {
+            @apply(--layout-end-justified);
+        }
+
+        .column {
+            @apply(--layout-flex);
+            margin: 0 8px;
+        }
+
+        .title {
+            @apply(--paper-font-title);
+        }
+
+        .result {
+            @apply(--paper-font-subhead);
+            width: 100%;
+            text-align: left;
+        }
+    </style>
+
+    <template>
+
+        <section class="row" id="close">
+            <paper-icon-button icon="close" on-click="close"></paper-icon-button>
+        </section>
+
+        <section class="row">
+            <paper-input label="search" type="text" id="search" tabindex="0" on-keyup="onKeyUp">
+                <paper-icon-button suffix icon="search"></paper-icon-button>
+            </paper-input>
+        </section>
+
+        <section class="row" id="result">
+            <section class="column">
+                <my-search-results title="EZTV" results="{{ eztv }}" on-result="onResult"></my-search-results>
+            </section>
+
+            <section class="column">
+                <my-search-results title="YTS" results="{{ yts }}" on-result="onResult"></my-search-results>
+            </section>
+        </section>
+
+    </template>
+
+</dom-module>
+
+<script>
+    'use strict';
+
+    var throttle = require('throttle-debounce').throttle;
+    var searchEztv = require('./eztv').search;
+    var yts = new (require('yts-client'))();
+    var bytes = require('pretty-bytes');
+
+    Polymer({
+        is: 'my-search',
+        behaviors: [
+            Polymer.NeonAnimationRunnerBehavior
+        ],
+        listeners: {
+            'neon-animation-finish': 'onAnimationFinished'
+        },
+        properties: {
+            value: {
+                type: String,
+                notify: true
+            },
+            animationConfig: {
+                value: function () {
+                    return {
+                        'entry': {
+                            name: 'fade-in-animation',
+                            node: this
+                        },
+                        'exit': {
+                            name: 'fade-out-animation',
+                            node: this
+                        }
+                    }
+                }
+            }
+        },
+        open: function () {
+            this.hidden = false;
+            this.playAnimation('entry');
+            this.$.search.focus();
+        },
+        close: function () {
+            var _this = this;
+            this.playAnimation('exit', function () {
+                this.$.search.value = '';
+                _this.hidden = true;
+            });
+        },
+        ready: function () {
+            this.hidden = true;
+
+            this.search = throttle(1000, this.doSearch.bind(this));
+        },
+        doSearch: function () {
+            var _this = this;
+
+            if (!this.$.search.value) {
+                this.eztv = null;
+                this.yts = null;
+
+                return;
+            }
+
+            searchEztv(this.$.search.value)
+                    .then(function (torrents) {
+                        _this.eztv = torrents.slice(0, 10);
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                    });
+
+            yts.find({
+                term: this.$.search.value
+            }, function (err, result) {
+                if (err) {
+                    console.error(err);
+
+                    return;
+                }
+
+                _this.yts = result
+                        .slice(0, 10)
+                        .map(function (r) {
+                            return {
+                                name: r.name,
+                                magnet: 'magnet:?xt=urn:btih:' + r.torrents[0].hash + '&dn=' + encodeURIComponent(r.name),
+                                size: bytes(r.torrents[0].size)
+                            };
+                        });
+            });
+        },
+        onKeyUp: function () {
+            this.search();
+        },
+        onKeyDown: function (e) {
+            if (e.keyCode == 27) {
+                this.close();
+            }
+        },
+        onResult: function(e, result) {
+            this.fire('result', result.magnet);
+            this.close();
+        },
+        onAnimationFinished: function (e, arg) {
+            if (typeof arg == 'function') {
+                arg.call(this);
+            }
+        }
+    });
+</script>

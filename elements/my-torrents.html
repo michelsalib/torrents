@@ -52,12 +52,16 @@
                 <my-help />
             </template>
 
-            <my-dropper id="dropper" on-dropped="add" hidden$="{{hideDropper}}"/>
+            <my-search id="search" on-result="add"></my-search>
+
+            <my-dropper id="dropper" on-dropped="validateDrop" hidden$="{{hideDropper}}"/>
         </section>
 
     </template>
     <script>
         'use strict';
+
+        var readTorrent = require('read-torrent');
 
         Polymer({
             is: 'my-torrents',
@@ -108,6 +112,9 @@
                 this.dragCounter = 0;
                 this.hideDropper = true;
 
+                // hook window listener, ugly
+                window.onkeydown = this.onKeyDown.bind(this);
+
                 // load db
                 var low = require('lowdb');
                 var storage = require('lowdb/file-sync'); // blocking impl
@@ -117,6 +124,19 @@
                 this.torrents = this.db.object.torrents = this.db.object.torrents || [];
                 this.file = null;
                 this.displayHelp = !this.torrents.length;
+            },
+            onKeyDown: function (e) {
+                if (this.$.search.hidden == false) {
+                    return;
+                }
+
+                var input = String.fromCharCode(e.keyCode);
+
+                if (!/^\w$/.test(input)) {
+                    return;
+                }
+
+                this.$.search.open();
             },
             onDragEnter: function (e) {
                 this.dragCounter++;
@@ -142,7 +162,7 @@
 
                 return false;
             },
-            add: function (e, path) {
+            validateDrop: function (e, path) {
                 var _this = this;
 
                 _this.dragCounter = 0;
@@ -150,11 +170,16 @@
                     _this.hideDropper = true;
                 });
 
+                _this.add(null, path);
+            },
+            add: function (e, path) {
+                var _this = this;
+
                 if (typeof path != 'string') {
                     return;
                 }
 
-                require('read-torrent')(path, function (err, torrent) {
+                readTorrent(path, function (err, torrent) {
                     var t = {
                         name: decodeURIComponent(torrent.name),
                         infoHash: torrent.infoHash,
