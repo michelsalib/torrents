@@ -108,7 +108,8 @@
         close: function () {
             var _this = this;
             this.playAnimation('exit', function () {
-                this.$.search.value = '';
+                _this.searchValue = '';
+                _this.$.search.value = '';
                 _this.hidden = true;
             });
         },
@@ -124,13 +125,14 @@
             this.searchYts = searchYts;
             this.searchKat = searchKat;
         },
-        onKeyUp: function () {
-            this.search();
-        },
-        onKeyDown: function (e) {
+        onKeyUp: function (e) {
             if (e.keyCode == 27) {
                 this.close();
+
+                return;
             }
+
+            this.search();
         },
         onResult: function(e, result) {
             this.fire('result', result.magnet);

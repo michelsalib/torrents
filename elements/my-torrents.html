@@ -49,12 +49,12 @@
             </template>
 
             <template is="dom-if" if="{{ displayHelp }}">
-                <my-help />
+                <my-help/>
             </template>
 
             <my-search id="search" on-result="add"></my-search>
 
-            <my-dropper id="dropper" on-dropped="validateDrop" hidden$="{{hideDropper}}"/>
+            <my-dropper id="dropper" on-result="add"></my-dropper>
         </section>
 
     </template>
@@ -62,30 +62,13 @@
         'use strict';
 
         var readTorrent = require('read-torrent');
+        var electron = require('electron');
 
         Polymer({
             is: 'my-torrents',
             listeners: {
                 'content.dragenter': 'onDragEnter',
-                'content.dragleave': 'onDragLeave',
-                'neon-animation-finish': 'onAnimationFinished'
-            },
-            behaviors: [
-                Polymer.NeonAnimationRunnerBehavior
-            ],
-            properties: {
-                animationConfig: {
-                    value: function() {
-                        return {
-                            'open-dropper': [
-                                { animatable: this.$.dropper, type: 'entry'}
-                            ],
-                            'close-dropper': [
-                                { animatable: this.$.dropper, type: 'exit'}
-                            ]
-                        }
-                    }
-                }
+                'content.dragleave': 'onDragLeave'
             },
             close: function () {
                 window.close();
@@ -109,8 +92,8 @@
                 this.file = null;
             },
             ready: function () {
+                var _this = this;
                 this.dragCounter = 0;
-                this.hideDropper = true;
 
                 // hook window listener, ugly
                 window.onkeydown = this.onKeyDown.bind(this);
@@ -118,12 +101,19 @@
                 // load db
                 var low = require('lowdb');
                 var storage = require('lowdb/file-sync'); // blocking impl
-                this.db = low('db.json', {storage});
+
+                this.db = low(__dirname + '\\db.json', {storage});
 
                 // load torrents, bind to low lever array collection, setting default value to []
                 this.torrents = this.db.object.torrents = this.db.object.torrents || [];
                 this.file = null;
                 this.displayHelp = !this.torrents.length;
+
+                // listen to main process
+                electron.ipcRenderer.send('ready');
+                electron.ipcRenderer.on('open', function (event, data) {
+                    _this.add(null, data);
+                });
             },
             onKeyDown: function (e) {
                 if (this.$.search.hidden == false) {
@@ -142,8 +132,7 @@
                 this.dragCounter++;
 
                 if (this.dragCounter == 1) {
-                    this.hideDropper = false;
-                    this.playAnimation('open-dropper');
+                    this.$.dropper.open();
                 }
 
                 return false;
@@ -151,29 +140,19 @@
             onDragLeave: function (e) {
                 var _this = this;
 
-                setTimeout(function() {
+                setTimeout(function () {
                     _this.dragCounter--;
                     if (_this.dragCounter == 0) {
-                        _this.playAnimation('close-dropper', function() {
-                            _this.hideDropper = true;
-                        });
+                        _this.$.dropper.close();
                     }
                 }, 100);
 
                 return false;
             },
-            validateDrop: function (e, path) {
+            add: function (e, path) {
                 var _this = this;
 
                 _this.dragCounter = 0;
-                this.playAnimation('close-dropper', function() {
-                    _this.hideDropper = true;
-                });
-
-                _this.add(null, path);
-            },
-            add: function (e, path) {
-                var _this = this;
 
                 if (typeof path != 'string') {
                     return;
@@ -192,7 +171,7 @@
                     _this.displayHelp = false;
                 });
             },
-            onAnimationFinished: function(e, arg) {
+            onAnimationFinished: function (e, arg) {
                 if (typeof arg == 'function') {
                     arg.call(this);
                 }

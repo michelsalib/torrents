@@ -31,7 +31,8 @@
         is: 'my-dropper',
         listeners: {
             drop: 'close',
-            'download.drop': 'onDrop'
+            'download.drop': 'onDrop',
+            'neon-animation-finish': 'onAnimationFinished'
         },
         behaviors: [
             Polymer.NeonAnimationRunnerBehavior
@@ -53,13 +54,30 @@
             }
         },
         ready: function() {
-
+            this.hidden = true;
         },
-        close: function() {
-            this.fire('dropped');
+        open: function () {
+            if (!this.hidden) {
+                return;
+            }
+
+            this.hidden = false;
+            this.playAnimation('entry');
+        },
+        close: function () {
+            if (this.hidden) {
+                return;
+            }
+
+            var _this = this;
+            this.playAnimation('exit', function () {
+                _this.hidden = true;
+            });
         },
         onDrop: function (e) {
             var _this = this;
+
+            _this.close();
 
             for (let i = 0; i < e.dataTransfer.items.length; ++i) {
                 var item = e.dataTransfer.items[i];
@@ -67,7 +85,7 @@
                 switch (item.type) {
                     case 'text/uri-list':
                         item.getAsString(function (s) {
-                            _this.fire('dropped', encodeURI(s));
+                            _this.fire('result', encodeURI(s));
                         });
 
                         break;
@@ -79,7 +97,7 @@
 
                 switch (file.type) {
                     case 'application/x-bittorrent':
-                        _this.fire('dropped', file.path);
+                        _this.fire('result', file.path);
 
                         break;
                 }
@@ -88,6 +106,11 @@
             e.stopPropagation();
             e.preventDefault();
             return false;
+        },
+        onAnimationFinished: function (e, arg) {
+            if (typeof arg == 'function') {
+                arg.call(this);
+            }
         }
     });
 </script>

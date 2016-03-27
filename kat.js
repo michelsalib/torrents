@@ -5,11 +5,7 @@ var utils = require('./utils');
 module.exports = {};
 
 module.exports.search = function (query) {
-    var find = Promise.promisify(kat.search, {
-        context: kat
-    });
-
-    return find(query)
+    return Promise.resolve(kat.search(query))
         .then(function (page) {
             var results = page.results.map(function (r) {
                 var result = utils.tryGetShow(r.title);

@@ -10,16 +10,19 @@ module.exports.search = function (query) {
     });
 
     return find({
-            term: query
-        })
+        term: query
+    })
         .then(function (results) {
-            results.slice(0, 10).forEach(function(r) {
-                r.torrents.forEach(function(t) {
-                    t.size = bytes(t.size);
-                    t.magnet = 'magnet:?xt=urn:btih:' +t.hash + '&dn=' + encodeURIComponent(r.name);
+            results = results.slice(0, 10);
+
+            results
+                .forEach(function (r) {
+                    r.torrents.forEach(function (t) {
+                        t.size = bytes(t.size);
+                        t.magnet = 'magnet:?xt=urn:btih:' + t.hash + '&dn=' + encodeURIComponent(r.name);
+                    });
                 });
-            });
-            
+
             return results;
         });
 };
