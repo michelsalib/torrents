@@ -16,6 +16,12 @@
 
         paper-item-body {
             @apply(--layout-flex);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        paper-button {
+            min-width: inherit;
         }
     </style>
 
@@ -23,13 +29,14 @@
         <div class="title">{{ header }}</div>
 
         <template is="dom-repeat" items="{{ results }}">
-            <paper-item>
+            <paper-item on-click="onClickItem">
                 <paper-item-body>
                     {{ item.name }}
+                    <paper-tooltip position="top" offset="0">{{ item.name }}</paper-tooltip>
                 </paper-item-body>
 
                 <template is="dom-repeat" items="{{ item.torrents }}">
-                    <paper-button  on-click="onClick">
+                    <paper-button on-click="onClickTorrent">
                         {{ item.quality }}
                         <paper-tooltip position="top" offset="0" animation-delay="0">{{ item.extra }}</paper-tooltip>
                     </paper-button>
@@ -45,14 +52,51 @@
 <script>
     'use strict';
 
+    var Promise = require('bluebird');
+
     Polymer({
         is: 'my-search-results',
         properties: {
             header: String,
-            results: Array
+            provider: Function,
+            query: {
+                type: String,
+                notify: true
+            }
         },
-        onClick: function (e) {
+        listeners: {
+            'query-changed': 'onQueryChanged'
+        },
+        ready: function() {
+            this.process = Promise.resolve();
+        },
+        onQueryChanged: function() {
+            var _this = this;
+            this.process.cancel();
+
+            if (!this.query) {
+                this.results = [];
+            }
+
+            this.process = this.provider(this.query)
+                    .then(function (r) {
+                        _this.results = r;
+                    })
+                    .catch(function(err) {
+                        console.error(err);
+                    });
+        },
+        onClickTorrent: function (e) {
             this.fire('result', e.model.item);
+        },
+        onClickItem: function (e) {
+            var item = e.model.item;
+
+            if (item.torrents && item.torrents.length) {
+                return;
+            }
+
+            this.fire('result', item);
         }
     });
 </script>

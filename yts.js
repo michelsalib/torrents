@@ -13,9 +13,7 @@ module.exports.search = function (query) {
             term: query
         })
         .then(function (results) {
-            console.log(results);
-
-            results.forEach(function(r) {
+            results.slice(0, 10).forEach(function(r) {
                 r.torrents.forEach(function(t) {
                     t.size = bytes(t.size);
                     t.magnet = 'magnet:?xt=urn:btih:' +t.hash + '&dn=' + encodeURIComponent(r.name);

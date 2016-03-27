@@ -48,11 +48,15 @@
 
         <section class="row" id="result">
             <section class="column">
-                <my-search-results header="EZTV" results="{{ eztv }}" on-result="onResult"></my-search-results>
+                <my-search-results header="EZTV" provider="{{ searchEztv }}" query="{{ searchValue }}" on-result="onResult"></my-search-results>
             </section>
 
             <section class="column">
-                <my-search-results header="YTS" results="{{ yts }}" on-result="onResult"></my-search-results>
+                <my-search-results header="YTS" provider="{{ searchYts }}" query="{{ searchValue }}" on-result="onResult"></my-search-results>
+            </section>
+
+            <section class="column">
+                <my-search-results header="KAT" provider="{{ searchKat }}" query="{{ searchValue }}" on-result="onResult"></my-search-results>
             </section>
         </section>
 
@@ -66,6 +70,7 @@
     var throttle = require('throttle-debounce').throttle;
     var searchEztv = require('./eztv').search;
     var searchYts = require('./yts').search;
+    var searchKat = require('./kat').search;
 
     Polymer({
         is: 'my-search',
@@ -108,37 +113,16 @@
             });
         },
         ready: function () {
+            var _this = this;
             this.hidden = true;
 
-            this.search = throttle(1000, this.doSearch.bind(this));
-        },
-        doSearch: function () {
-            var _this = this;
+            this.search = throttle(1000, function() {
+                _this.searchValue = _this.$.search.value;
+            });
 
-            if (!this.$.search.value) {
-                this.eztv = null;
-                this.yts = null;
-
-                return;
-            }
-
-            searchEztv(this.$.search.value)
-                    .then(function (torrents) {
-                        _this.eztv = torrents;
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        _this.eztv = [];
-                    });
-
-            searchYts(this.$.search.value)
-                    .then(function (torrents) {
-                        _this.yts = torrents;
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        _this.yts = [];
-                    });
+            this.searchEztv = searchEztv;
+            this.searchYts = searchYts;
+            this.searchKat = searchKat;
         },
         onKeyUp: function () {
             this.search();

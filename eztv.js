@@ -21,7 +21,8 @@ module.exports.search = function search(query) {
 
                 if (!episode) {
                     episode = {
-                        name: name
+                        name: name,
+                        groupable: false
                     };
                 }
                 

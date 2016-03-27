@@ -15,6 +15,7 @@ module.exports.tryGetShow = function (name) {
     episode.name = show + ' S' + seasonNumber + 'E' + episodeNumber;
     episode.quality = (parseInt(titleRegex[5]) || '420') + 'p';
     episode.extra = titleRegex[6].trim();
+    episode.groupable = true;
 
     return episode;
 };
@@ -23,6 +24,12 @@ module.exports.groupResults = function(results) {
     var res = [];
 
     results.forEach(function (item) {
+        if (!item.groupable) {
+            res.push(item);
+
+            return;
+        }
+
         var group = res.filter(function (g) {
             return g.name == item.name;
         })[0];

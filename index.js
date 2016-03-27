@@ -1,10 +1,13 @@
 'use strict';
 
+const Promise = require("bluebird");
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
-var mainWindow = null;
+Promise.config({
+    cancellation: true
+});
 
 app.on('window-all-closed', function() {
     // On OS X it is common for applications and their menu bar
@@ -15,7 +18,7 @@ app.on('window-all-closed', function() {
 });
 
 app.on('ready', function() {
-    mainWindow = new BrowserWindow({
+    var mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
         frame: false
