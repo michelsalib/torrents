@@ -9,15 +9,33 @@
             width: 100%;
             text-align: left;
         }
+
+        paper-item {
+            @apply(--layout-horizontal);
+        }
+
+        paper-item-body {
+            @apply(--layout-flex);
+        }
     </style>
 
     <template>
-        <div class="title">{{ title }}</div>
+        <div class="title">{{ header }}</div>
 
         <template is="dom-repeat" items="{{ results }}">
-            <div>
-                <paper-button class="result" on-click="onClick">{{ item.name }}</paper-button>
-            </div>
+            <paper-item>
+                <paper-item-body>
+                    {{ item.name }}
+                </paper-item-body>
+
+                <template is="dom-repeat" items="{{ item.torrents }}">
+                    <paper-button  on-click="onClick">
+                        {{ item.quality }}
+                        <paper-tooltip position="top" offset="0" animation-delay="0">{{ item.extra }}</paper-tooltip>
+                    </paper-button>
+                </template>
+
+            </paper-item>
         </template>
 
     </template>
@@ -30,7 +48,7 @@
     Polymer({
         is: 'my-search-results',
         properties: {
-            title: String,
+            header: String,
             results: Array
         },
         onClick: function (e) {

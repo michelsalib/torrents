@@ -48,11 +48,11 @@
 
         <section class="row" id="result">
             <section class="column">
-                <my-search-results title="EZTV" results="{{ eztv }}" on-result="onResult"></my-search-results>
+                <my-search-results header="EZTV" results="{{ eztv }}" on-result="onResult"></my-search-results>
             </section>
 
             <section class="column">
-                <my-search-results title="YTS" results="{{ yts }}" on-result="onResult"></my-search-results>
+                <my-search-results header="YTS" results="{{ yts }}" on-result="onResult"></my-search-results>
             </section>
         </section>
 
@@ -65,8 +65,7 @@
 
     var throttle = require('throttle-debounce').throttle;
     var searchEztv = require('./eztv').search;
-    var yts = new (require('yts-client'))();
-    var bytes = require('pretty-bytes');
+    var searchYts = require('./yts').search;
 
     Polymer({
         is: 'my-search',
@@ -125,31 +124,21 @@
 
             searchEztv(this.$.search.value)
                     .then(function (torrents) {
-                        _this.eztv = torrents.slice(0, 10);
+                        _this.eztv = torrents;
                     })
                     .catch(function (err) {
                         console.error(err);
+                        _this.eztv = [];
                     });
 
-            yts.find({
-                term: this.$.search.value
-            }, function (err, result) {
-                if (err) {
-                    console.error(err);
-
-                    return;
-                }
-
-                _this.yts = result
-                        .slice(0, 10)
-                        .map(function (r) {
-                            return {
-                                name: r.name,
-                                magnet: 'magnet:?xt=urn:btih:' + r.torrents[0].hash + '&dn=' + encodeURIComponent(r.name),
-                                size: bytes(r.torrents[0].size)
-                            };
-                        });
-            });
+            searchYts(this.$.search.value)
+                    .then(function (torrents) {
+                        _this.yts = torrents;
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        _this.yts = [];
+                    });
         },
         onKeyUp: function () {
             this.search();

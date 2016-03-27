@@ -10,6 +10,7 @@
     "url": "https://github.com/michelsalib/torrents.git"
   },
   "dependencies": {
+    "bluebird": "^3.3.4",
     "bower": "^1.7.7",
     "cheerio": "^0.20.0",
     "electron-prebuilt": "~0.36.0",
