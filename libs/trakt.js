@@ -22,9 +22,8 @@ if (savedToken) {
 module.exports = {};
 
 module.exports.deck = function () {
-    return Promise.promisify(trakt.ondeck.getAll, {
-            context: trakt.ondeck
-        })()
+    return trakt.ondeck
+        .getAll()
         .then(function (r) {
             r.shows.forEach(function (show) {
                 show.next_episode.query = 'S' + utils.formatEpisodeNumber(show.next_episode.season) +
