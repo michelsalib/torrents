@@ -2,6 +2,15 @@
 
 This is a prototype torrent client. Based on [electron](http://electron.atom.io/) and [polymer](https://www.polymer-project.org).
 
+### Features
+
+- Download torrents, with high priority for blocks at the beginning of files
+- .torrent files and magnet protocol
+- Drag and drop .torrent files and magnet links
+- Trakt.tv connection
+- Video torrent streaming video player
+- Search into EZTV, YTS and KAT
+
 ## Install
 
 ```
