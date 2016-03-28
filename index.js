@@ -30,7 +30,7 @@ if (shouldQuit) {
 
 register.register(
     'torrents',
-    '"C:\\Users\\U6016819\\Projects\\torrents\\node_modules\\.bin\\electron.cmd" "C:\\Users\\U6016819\\Projects\\torrents\\index.js" "%1"',
+    __dirname + '\\torrents "%1"',
     '.torrent',
     'application/x-bittorrent',
     {
