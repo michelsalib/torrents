@@ -1,5 +1,6 @@
 var Trakt = require('trakt.tv');
 var utils = require('./utils');
+var Promise = require('bluebird');
 var db = require('./db').db;
 
 var clientId = '45c2123b81d80846f5fee59c1f0f921a2d6ab9738ae0a28597ac164f2b0a1ad6';
@@ -11,28 +12,26 @@ var trakt = new Trakt({
     plugins: ['ondeck']
 });
 
+var authenticated = false;
 var savedToken = db('settings').find({name: 'trakt_token'});
 if (savedToken) {
+    authenticated = true;
     trakt.import_token(savedToken.value);
-}
-else {
-    console.warn('Trakt auth', trakt.get_url());
 }
 
 module.exports = {};
 
 module.exports.deck = function () {
-    return trakt.ondeck
-        .getAll()
+    return Promise.promisify(trakt.ondeck.getAll, {
+            context: trakt.ondeck
+        })()
         .then(function (r) {
-
-
             r.shows.forEach(function (show) {
                 show.next_episode.query = 'S' + utils.formatEpisodeNumber(show.next_episode.season) +
                     'E' + utils.formatEpisodeNumber(show.next_episode.number);
             });
 
-            r.shows.sort(function(a, b) {
+            r.shows.sort(function (a, b) {
                 return new Date(a.show.updated_at) < new Date(b.show.updated_at);
             });
 
@@ -40,9 +39,33 @@ module.exports.deck = function () {
         });
 };
 
-module.exports.markEpisodeWatched = function(ids) {
-    return trakt.sync.history.add({episodes: [{
-        watched_at: new Date(),
-        ids: ids
-    }]});
+module.exports.markEpisodeWatched = function (ids) {
+    return trakt.sync.history.add({
+        episodes: [{
+            watched_at: new Date(),
+            ids: ids
+        }]
+    });
+};
+
+module.exports.isAuthenticated = function() {
+    return authenticated;
+};
+
+module.exports.getAuthUrl = function() {
+    return trakt.get_url();
+};
+
+module.exports.authenticate = function(code) {
+    return trakt.exchange_code(code)
+        .then(function(r) {
+            authenticated = true;
+
+            db('settings').push({
+                name: 'trakt_token',
+                value: r
+            });
+            
+            return null;
+        });
 };

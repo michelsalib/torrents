@@ -23,6 +23,12 @@
             @apply(--layout-flex);
             overflow-y: auto;
         }
+
+        #validate {
+            color: white;
+            background: var(--primary-color);
+            @apply(--paper-font-title);
+        }
     </style>
 
     <template>
@@ -31,6 +37,12 @@
             <span class="title">On deck to watch</span>
             <paper-icon-button icon="close" on-click="close"></paper-icon-button>
         </paper-toolbar>
+
+        <section hidden$="{{hideForm}}" id="authForm">
+            <paper-input label="Code" type="text" id="code" tabindex="0" on-keydown="capture"></paper-input>
+
+            <paper-button id="validate" suffix on-click="authenticate">Validate</paper-button>
+        </section>
 
         <div class="scrollable">
             <section class="shows">
@@ -59,6 +71,7 @@
     'use strict';
 
     var trakt = require('./libs/trakt');
+    var shell = require('electron').shell;
 
     Polymer({
         is: 'my-tracker',
@@ -95,6 +108,8 @@
 
             this.hidden = false;
             this.playAnimation('entry');
+
+            this.ensureAuth();
         },
         close: function () {
             if (this.hidden) {
@@ -108,6 +123,7 @@
         },
         ready: function () {
             this.hidden = true;
+            this.hideForm = true;
 
             this.refresh();
         },
@@ -118,15 +134,39 @@
             var _this = this;
 
             trakt.markEpisodeWatched(e.model.item.next_episode.ids)
-                    .then(function() {
+                    .then(function () {
                         return _this.refresh();
                     })
                     .catch(function (err) {
                         console.error(err);
                     });
         },
-        refresh: function() {
+        ensureAuth: function () {
+            if (trakt.isAuthenticated()) {
+                this.hideForm = true;
+
+                return;
+            }
+
+            this.hideForm = false;
+            shell.openExternal(trakt.getAuthUrl());
+            this.$.code.focus();
+        },
+        authenticate: function () {
             var _this = this;
+
+            trakt.authenticate(this.$.code.value)
+                    .then(function () {
+                        _this.refresh();
+                    })
+        },
+        refresh: function () {
+            if (!trakt.isAuthenticated()) {
+                return;
+            }
+
+            var _this = this;
+            _this.hideForm = true;
 
             trakt.deck()
                     .then(function (r) {
@@ -135,6 +175,13 @@
                     .catch(function (err) {
                         console.error(err);
                     });
+        },
+        capture: function (e) {
+            e.stopPropagation();
+
+            if (e.keyCode == 13) {
+                this.authenticate();
+            }
         },
         onAnimationFinished: function (e, arg) {
             if (typeof arg == 'function') {
