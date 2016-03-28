@@ -2,6 +2,7 @@
 
 const Promise = require("bluebird");
 const electron = require('electron');
+const register = require('./libs/register');
 const ipcMain = electron.ipcMain;
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
@@ -27,9 +28,19 @@ if (shouldQuit) {
     return;
 }
 
+register.register(
+    'torrents',
+    '"C:\\Users\\U6016819\\Projects\\torrents\\node_modules\\.bin\\electron.cmd" "C:\\Users\\U6016819\\Projects\\torrents\\index.js" "%1"',
+    '.torrent',
+    'application/x-bittorrent',
+    {
+        protocol: 'Magnet',
+        name: 'Magnet URI',
+        type: 'application/x-magnet'
+    }
+);
+
 app.on('window-all-closed', function () {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform != 'darwin') {
         app.quit();
     }
@@ -55,8 +66,6 @@ app.on('ready', function () {
 });
 
 function openTorrentsFromArgs(args) {
-    console.log(args);
-
     args.filter(function (arg) {
         return /^magnet:|\.torrent$/i.test(arg);
     }).forEach(function (magnet) {
