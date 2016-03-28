@@ -101,7 +101,7 @@
                 window.onkeydown = this.onKeyDown.bind(this);
 
                 // load db
-                this.db = require('./db').db;
+                this.db = require('./libs/db').db;
 
                 this.torrents = this.db.object.torrents;
                 this.file = null;
@@ -115,6 +115,12 @@
             },
             onKeyDown: function (e) {
                 if (this.$.search.hidden == false) {
+                    return;
+                }
+
+                if (e.keyCode === 123) {
+                    require('remote').getCurrentWindow().toggleDevTools();
+
                     return;
                 }
 

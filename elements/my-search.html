@@ -69,9 +69,9 @@
     'use strict';
 
     var throttle = require('throttle-debounce').throttle;
-    var searchEztv = require('./eztv').search;
-    var searchYts = require('./yts').search;
-    var searchKat = require('./kat').search;
+    var searchEztv = require('./libs/eztv').search;
+    var searchYts = require('./libs/yts').search;
+    var searchKat = require('./libs/kat').search;
 
     Polymer({
         is: 'my-search',
