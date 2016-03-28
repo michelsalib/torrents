@@ -1,4 +1,10 @@
+function formatEpisodeNumber(number) {
+    return ('00' + parseInt(number)).slice(-2)
+}
+
 module.exports = {};
+
+module.exports.formatEpisodeNumber = formatEpisodeNumber;
 
 module.exports.tryGetShow = function (name) {
     var titleRegex = name.match(/(.+) s?(\d+)[ex](\d+)(.?(\d+)p?)?(.*)/i);
@@ -8,8 +14,8 @@ module.exports.tryGetShow = function (name) {
 
     var episode = {};
 
-    var seasonNumber = ('00' + parseInt(titleRegex[2])).slice(-2);
-    var episodeNumber = ('00' + parseInt(titleRegex[3])).slice(-2);
+    var seasonNumber = formatEpisodeNumber(titleRegex[2]);
+    var episodeNumber = formatEpisodeNumber(titleRegex[3]);
     var show = titleRegex[1];
 
     episode.name = show + ' S' + seasonNumber + 'E' + episodeNumber;

@@ -5,12 +5,10 @@
             height: 100%;
             width: 100%;
 
-            @apply(--paper-font-title);
             @apply(--layout-vertical);
         }
 
         #title {
-            transition: background-color 0.4s ease;
             -webkit-user-select: none;
             -webkit-app-region: drag;
         }
@@ -26,7 +24,7 @@
             height: 100%;
         }
 
-        #close {
+        paper-toolbar paper-icon-button {
             -webkit-app-region: no-drag;
         }
     </style>
@@ -34,7 +32,9 @@
 
         <paper-toolbar id="title">
             <span class="title">Torrents</span>
-            <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
+
+            <paper-icon-button icon="av:subscriptions" on-click="openTracker"></paper-icon-button>
+            <paper-icon-button icon="close" on-click="close"></paper-icon-button>
         </paper-toolbar>
 
         <section id="content">
@@ -51,6 +51,8 @@
             <template is="dom-if" if="{{ displayHelp }}">
                 <my-help/>
             </template>
+
+            <my-tracker id="tracker" on-search="search"></my-tracker>
 
             <my-search id="search" on-result="add"></my-search>
 
@@ -99,13 +101,9 @@
                 window.onkeydown = this.onKeyDown.bind(this);
 
                 // load db
-                var low = require('lowdb');
-                var storage = require('lowdb/file-sync'); // blocking impl
+                this.db = require('./db').db;
 
-                this.db = low(__dirname + '\\db.json', {storage});
-
-                // load torrents, bind to low lever array collection, setting default value to []
-                this.torrents = this.db.object.torrents = this.db.object.torrents || [];
+                this.torrents = this.db.object.torrents;
                 this.file = null;
                 this.displayHelp = !this.torrents.length;
 
@@ -126,6 +124,7 @@
                     return;
                 }
 
+                this.$.tracker.close();
                 this.$.search.open();
             },
             onDragEnter: function (e) {
@@ -148,6 +147,15 @@
                 }, 100);
 
                 return false;
+            },
+            openTracker: function() {
+                this.$.search.close();
+                this.$.tracker.open();
+            },
+            search: function(e, query) {
+                this.$.tracker.close();
+                this.$.search.setValue(query);
+                this.$.search.open();
             },
             add: function (e, path) {
                 var _this = this;

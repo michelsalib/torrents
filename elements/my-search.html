@@ -4,6 +4,10 @@
             background: white;
         }
 
+        paper-toolbar {
+            --paper-toolbar-background: var(--accent-color);
+        }
+
         .row {
             @apply(--layout-horizontal);
             @apply(--layout-start);
@@ -12,10 +16,6 @@
         #search {
             @apply(--layout-flex);
             margin: 0 8px;
-        }
-
-        .row#close {
-            @apply(--layout-end-justified);
         }
 
         .column {
@@ -36,12 +36,13 @@
 
     <template>
 
-        <section class="row" id="close">
+        <paper-toolbar>
+            <span class="title">Search</span>
             <paper-icon-button icon="close" on-click="close"></paper-icon-button>
-        </section>
+        </paper-toolbar>
 
         <section class="row">
-            <paper-input label="search" type="text" id="search" tabindex="0" on-keyup="onKeyUp">
+            <paper-input type="text" id="search" tabindex="0" on-keyup="onKeyUp">
                 <paper-icon-button suffix icon="search"></paper-icon-button>
             </paper-input>
         </section>
@@ -81,10 +82,6 @@
             'neon-animation-finish': 'onAnimationFinished'
         },
         properties: {
-            value: {
-                type: String,
-                notify: true
-            },
             animationConfig: {
                 value: function () {
                     return {
@@ -101,11 +98,19 @@
             }
         },
         open: function () {
+            if (!this.hidden) {
+                return;
+            }
+
             this.hidden = false;
             this.playAnimation('entry');
             this.$.search.focus();
         },
         close: function () {
+            if (this.hidden) {
+                return;
+            }
+
             var _this = this;
             this.playAnimation('exit', function () {
                 _this.searchValue = '';
@@ -124,6 +129,10 @@
             this.searchEztv = searchEztv;
             this.searchYts = searchYts;
             this.searchKat = searchKat;
+        },
+        setValue: function(query) {
+            this.$.search.value = query;
+            this.search();
         },
         onKeyUp: function (e) {
             if (e.keyCode == 27) {

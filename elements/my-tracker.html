@@ -1,0 +1,145 @@
+<dom-module id="my-tracker">
+    <style>
+        :host {
+            background: white;
+            @apply(--layout-vertical);
+        }
+
+        paper-toolbar {
+            --paper-toolbar-background: var(--accent-color);
+        }
+
+        .shows {
+            @apply(--layout-horizontal);
+            @apply(--layout-wrap);
+        }
+
+        paper-card {
+            max-width: 200px;
+            margin: 8px;
+        }
+
+        .scrollable {
+            @apply(--layout-flex);
+            overflow-y: auto;
+        }
+    </style>
+
+    <template>
+
+        <paper-toolbar>
+            <span class="title">On deck to watch</span>
+            <paper-icon-button icon="close" on-click="close"></paper-icon-button>
+        </paper-toolbar>
+
+        <div class="scrollable">
+            <section class="shows">
+
+                <template is="dom-repeat" items="{{ deck.shows }}">
+                    <paper-card image="{{ item.show.images.poster.thumb }}">
+                        <div class="card-content">
+                            <strong>{{ item.next_episode.query }}</strong>
+                            {{ item.next_episode.title }}
+                        </div>
+                        <div class="card-actions">
+                            <paper-icon-button icon="search" on-click="searchShow"></paper-icon-button>
+                            <paper-icon-button icon="check" on-click="watchedShow"></paper-icon-button>
+                        </div>
+                    </paper-card>
+                </template>
+
+            </section>
+        </div>
+
+    </template>
+
+</dom-module>
+
+<script>
+    'use strict';
+
+    var trakt = require('./trakt');
+
+    Polymer({
+        is: 'my-tracker',
+        behaviors: [
+            Polymer.NeonAnimationRunnerBehavior
+        ],
+        listeners: {
+            'neon-animation-finish': 'onAnimationFinished'
+        },
+        properties: {
+            value: {
+                type: String,
+                notify: true
+            },
+            animationConfig: {
+                value: function () {
+                    return {
+                        'entry': {
+                            name: 'fade-in-animation',
+                            node: this
+                        },
+                        'exit': {
+                            name: 'fade-out-animation',
+                            node: this
+                        }
+                    }
+                }
+            }
+        },
+        open: function () {
+            if (!this.hidden) {
+                return;
+            }
+
+            this.hidden = false;
+            this.playAnimation('entry');
+        },
+        close: function () {
+            if (this.hidden) {
+                return;
+            }
+
+            var _this = this;
+            this.playAnimation('exit', function () {
+                _this.hidden = true;
+            });
+        },
+        ready: function () {
+            this.hidden = true;
+
+            this.refresh();
+        },
+        searchShow: function (e) {
+            this.fire('search', e.model.item.show.title + ' ' + e.model.item.next_episode.query);
+        },
+        watchedShow: function (e) {
+            var _this = this;
+
+            trakt.markEpisodeWatched(e.model.item.next_episode.ids)
+                    .then(function() {
+                        return _this.refresh();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                    });
+        },
+        refresh: function() {
+            var _this = this;
+
+            trakt.deck()
+                    .then(function (r) {
+                        _this.deck = r;
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                    });
+        },
+        onAnimationFinished: function (e, arg) {
+            if (typeof arg == 'function') {
+                arg.call(this);
+            }
+        }
+    });
+</script>
