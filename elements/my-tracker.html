@@ -29,13 +29,29 @@
             background: var(--primary-color);
             @apply(--paper-font-title);
         }
+
+        paper-toolbar paper-menu paper-button {
+            color: var(--light-theme-text-color);
+        }
     </style>
 
     <template>
 
         <paper-toolbar>
+
+            <paper-menu-button>
+                <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
+                <paper-menu class="dropdown-content">
+                    <paper-button on-click="logout" disabled$="{{ isNotAuthenticated }}">logout</paper-button>
+                </paper-menu>
+            </paper-menu-button>
+
             <span class="title">On deck to watch</span>
+
+            <paper-icon-button icon="refresh" on-click="refresh" hidden$="{{ isNotAuthenticated }}"></paper-icon-button>
+
             <paper-icon-button icon="close" on-click="close"></paper-icon-button>
+
         </paper-toolbar>
 
         <section hidden$="{{hideForm}}" id="authForm">
@@ -109,7 +125,7 @@
             this.hidden = false;
             this.playAnimation('entry');
 
-            this.ensureAuth();
+            this.askAuthentication();
         },
         close: function () {
             if (this.hidden) {
@@ -132,8 +148,10 @@
                     .then(() => this.refresh())
                     .catch(err => console.error(err));
         },
-        ensureAuth: function () {
-            if (trakt.isAuthenticated()) {
+        askAuthentication: function () {
+            this.isNotAuthenticated = !trakt.isAuthenticated();
+
+            if (!this.isNotAuthenticated) {
                 this.hideForm = true;
 
                 return;
@@ -146,8 +164,15 @@
         authenticate: function () {
             trakt.authenticate(this.$.code.value).then(() => this.refresh())
         },
+        logout: function () {
+            this.deck = null;
+            trakt.logout();
+            this.askAuthentication();
+        },
         refresh: function () {
-            if (!trakt.isAuthenticated()) {
+            this.isNotAuthenticated = !trakt.isAuthenticated();
+
+            if (this.isNotAuthenticated) {
                 return;
             }
 

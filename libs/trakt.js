@@ -5,13 +5,20 @@ var db = require('./db').db;
 var clientId = '45c2123b81d80846f5fee59c1f0f921a2d6ab9738ae0a28597ac164f2b0a1ad6';
 var clientSecret = '6e1da19f42213d8cc1800828a73e0e2d732e39f3ba1f6098165f432b413b6f28';
 
-var trakt = new Trakt({
-    client_id: clientId,
-    client_secret: clientSecret,
-    plugins: ['ondeck']
-});
-
+var trakt = null;
 var authenticated = false;
+
+function createTraktInstance () {
+    trakt = new Trakt({
+        client_id: clientId,
+        client_secret: clientSecret,
+        plugins: ['ondeck']
+    });
+
+    authenticated = false;
+}
+
+createTraktInstance();
 var savedToken = db('settings').find({name: 'trakt_token'});
 if (savedToken) {
     authenticated = true;
@@ -60,3 +67,8 @@ module.exports.authenticate = code =>
 
             return null;
         });
+
+module.exports.logout = () => {
+    db('settings').remove({name: 'trakt_token'});
+    createTraktInstance();
+};
