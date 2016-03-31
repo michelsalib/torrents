@@ -67,7 +67,7 @@
 
 </dom-module>
 
-<script>
+<script type="application/javascript" type="text/ecmascript-6">
     'use strict';
 
     var trakt = require('./libs/trakt');
@@ -116,10 +116,7 @@
                 return;
             }
 
-            var _this = this;
-            this.playAnimation('exit', function () {
-                _this.hidden = true;
-            });
+            this.playAnimation('exit', () => this.hidden = true);
         },
         ready: function () {
             this.hidden = true;
@@ -131,15 +128,9 @@
             this.fire('search', e.model.item.show.title + ' ' + e.model.item.next_episode.query);
         },
         watchedShow: function (e) {
-            var _this = this;
-
             trakt.markEpisodeWatched(e.model.item.next_episode.ids)
-                    .then(function () {
-                        return _this.refresh();
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                    });
+                    .then(() => this.refresh())
+                    .catch(err => console.error(err));
         },
         ensureAuth: function () {
             if (trakt.isAuthenticated()) {
@@ -153,28 +144,18 @@
             this.$.code.focus();
         },
         authenticate: function () {
-            var _this = this;
-
-            trakt.authenticate(this.$.code.value)
-                    .then(function () {
-                        _this.refresh();
-                    })
+            trakt.authenticate(this.$.code.value).then(() => this.refresh())
         },
         refresh: function () {
             if (!trakt.isAuthenticated()) {
                 return;
             }
 
-            var _this = this;
-            _this.hideForm = true;
+            this.hideForm = true;
 
             trakt.deck()
-                    .then(function (r) {
-                        _this.deck = r;
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                    });
+                    .then(r => this.deck = r)
+                    .catch(err => console.error(err));
         },
         capture: function (e) {
             e.stopPropagation();
@@ -189,4 +170,5 @@
             }
         }
     });
+
 </script>

@@ -6,13 +6,13 @@ var base = "http://eztv.ag";
 
 module.exports = {};
 
-module.exports.search = function search(query) {
+module.exports.search = query => {
     return got(base + '/search/' + encodeURIComponent(query))
-        .then(function grabTorrents(data) {
+        .then(data => {
             var $ = cheerio.load(data.body);
             var res = [];
             
-            $('table.forum_header_border tr.forum_header_border').each(function (i, elem) {
+            $('table.forum_header_border tr.forum_header_border').each((i, elem) => {
                 var el = cheerio.load(elem);
                 var epinfo = el(".epinfo");
                 var name = epinfo.text();

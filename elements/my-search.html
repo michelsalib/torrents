@@ -65,7 +65,7 @@
 
 </dom-module>
 
-<script>
+<script type="application/javascript" type="text/ecmascript-6">
     'use strict';
 
     var throttle = require('throttle-debounce').throttle;
@@ -111,20 +111,16 @@
                 return;
             }
 
-            var _this = this;
-            this.playAnimation('exit', function () {
-                _this.searchValue = '';
-                _this.$.search.value = '';
-                _this.hidden = true;
+            this.playAnimation('exit', () => {
+                this.searchValue = '';
+                this.$.search.value = '';
+                this.hidden = true;
             });
         },
         ready: function () {
-            var _this = this;
             this.hidden = true;
 
-            this.search = throttle(1000, function() {
-                _this.searchValue = _this.$.search.value;
-            });
+            this.search = throttle(1000, () => this.searchValue = this.$.search.value);
 
             this.searchEztv = searchEztv;
             this.searchYts = searchYts;

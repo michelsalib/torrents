@@ -1,5 +1,3 @@
-'use strict';
-
 const Promise = require("bluebird");
 const electron = require('electron');
 const register = require('./libs/register');
@@ -13,7 +11,7 @@ Promise.config({
 
 var mainWindow = null;
 
-var shouldQuit = app.makeSingleInstance(function (commandLine, workingDirectory) {
+var shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
     if (mainWindow.isMinimized()) {
         mainWindow.restore();
     }
@@ -40,13 +38,13 @@ register.register(
     }
 );
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
     if (process.platform != 'darwin') {
         app.quit();
     }
 });
 
-app.on('ready', function () {
+app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
@@ -56,19 +54,12 @@ app.on('ready', function () {
 
     mainWindow.loadURL('file://' + __dirname + '/index.html');
 
-    mainWindow.on('closed', function () {
-        mainWindow = null;
-    });
+    mainWindow.on('closed', () => mainWindow = null);
 
-    ipcMain.on('ready', function() {
-        openTorrentsFromArgs(process.argv);
-    });
+    ipcMain.on('ready', () => openTorrentsFromArgs(process.argv));
 });
 
 function openTorrentsFromArgs(args) {
-    args.filter(function (arg) {
-        return /^magnet:|\.torrent$/i.test(arg);
-    }).forEach(function (magnet) {
-        mainWindow.webContents.send('open', magnet);
-    });
+    args.filter(arg => /^magnet:|\.torrent$/i.test(arg))
+        .forEach(magnet => mainWindow.webContents.send('open', magnet));
 }

@@ -60,7 +60,7 @@
         </section>
 
     </template>
-    <script>
+    <script type="application/javascript" type="text/ecmascript-6">
         'use strict';
 
         var readTorrent = require('read-torrent');
@@ -94,7 +94,6 @@
                 this.file = null;
             },
             ready: function () {
-                var _this = this;
                 this.dragCounter = 0;
 
                 // hook window listener, ugly
@@ -109,9 +108,7 @@
 
                 // listen to main process
                 electron.ipcRenderer.send('ready');
-                electron.ipcRenderer.on('open', function (event, data) {
-                    _this.add(null, data);
-                });
+                electron.ipcRenderer.on('open', (event, data) => this.add(null, data));
             },
             onKeyDown: function (e) {
                 if (this.$.search.hidden == false) {
@@ -143,12 +140,10 @@
                 return false;
             },
             onDragLeave: function (e) {
-                var _this = this;
-
-                setTimeout(function () {
-                    _this.dragCounter--;
-                    if (_this.dragCounter == 0) {
-                        _this.$.dropper.close();
+                setTimeout(() => {
+                    this.dragCounter--;
+                    if (this.dragCounter == 0) {
+                        this.$.dropper.close();
                     }
                 }, 100);
 
@@ -164,25 +159,23 @@
                 this.$.search.open();
             },
             add: function (e, path) {
-                var _this = this;
-
-                _this.dragCounter = 0;
+                this.dragCounter = 0;
 
                 if (typeof path != 'string') {
                     return;
                 }
 
-                readTorrent(path, function (err, torrent) {
+                readTorrent(path, (err, torrent) => {
                     var t = {
                         name: decodeURIComponent(torrent.name),
                         infoHash: torrent.infoHash,
                         loaded: false
                     };
 
-                    _this.push('torrents', t);
-                    _this.db.write();
+                    this.push('torrents', t);
+                    this.db.write();
 
-                    _this.displayHelp = false;
+                    this.displayHelp = false;
                 });
             },
             onAnimationFinished: function (e, arg) {

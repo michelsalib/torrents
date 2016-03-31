@@ -1,6 +1,5 @@
 var Trakt = require('trakt.tv');
 var utils = require('./utils');
-var Promise = require('bluebird');
 var db = require('./db').db;
 
 var clientId = '45c2123b81d80846f5fee59c1f0f921a2d6ab9738ae0a28597ac164f2b0a1ad6';
@@ -21,10 +20,10 @@ if (savedToken) {
 
 module.exports = {};
 
-module.exports.deck = function () {
-    return trakt.ondeck
+module.exports.deck = () =>
+    trakt.ondeck
         .getAll()
-        .then(function (r) {
+        .then(r => {
             r.shows.forEach(function (show) {
                 show.next_episode.query = 'S' + utils.formatEpisodeNumber(show.next_episode.season) +
                     'E' + utils.formatEpisodeNumber(show.next_episode.number);
@@ -36,35 +35,28 @@ module.exports.deck = function () {
 
             return r;
         });
-};
 
-module.exports.markEpisodeWatched = function (ids) {
-    return trakt.sync.history.add({
+module.exports.markEpisodeWatched = ids =>
+    trakt.sync.history.add({
         episodes: [{
             watched_at: new Date(),
             ids: ids
         }]
     });
-};
 
-module.exports.isAuthenticated = function() {
-    return authenticated;
-};
+module.exports.isAuthenticated = () => authenticated;
 
-module.exports.getAuthUrl = function() {
-    return trakt.get_url();
-};
+module.exports.getAuthUrl = () => trakt.get_url();
 
-module.exports.authenticate = function(code) {
-    return trakt.exchange_code(code)
-        .then(function(r) {
+module.exports.authenticate = code =>
+    trakt.exchange_code(code)
+        .then(r => {
             authenticated = true;
 
             db('settings').push({
                 name: 'trakt_token',
                 value: r
             });
-            
+
             return null;
         });
-};

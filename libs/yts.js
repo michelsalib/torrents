@@ -4,7 +4,7 @@ var bytes = require('pretty-bytes');
 
 module.exports = {};
 
-module.exports.search = function (query) {
+module.exports.search = query => {
     var find = Promise.promisify(yts.find, {
         context: yts
     });
@@ -12,16 +12,15 @@ module.exports.search = function (query) {
     return find({
         term: query
     })
-        .then(function (results) {
+        .then(results => {
             results = results.slice(0, 10);
 
-            results
-                .forEach(function (r) {
-                    r.torrents.forEach(function (t) {
-                        t.size = bytes(t.size);
-                        t.magnet = 'magnet:?xt=urn:btih:' + t.hash + '&dn=' + encodeURIComponent(r.name);
-                    });
+            results.forEach(r => {
+                r.torrents.forEach(t => {
+                    t.size = bytes(t.size);
+                    t.magnet = 'magnet:?xt=urn:btih:' + t.hash + '&dn=' + encodeURIComponent(r.name);
                 });
+            });
 
             return results;
         });

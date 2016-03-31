@@ -26,7 +26,8 @@
         <paper-icon-button icon="close" id="close" on-click="close"></paper-icon-button>
 
     </template>
-    <script>
+    <script type="application/javascript" type="text/ecmascript-6">
+
         var http = require('http');
         var rangeParser = require('range-parser');
         var pump = require('pump');
@@ -42,10 +43,10 @@
             listeners: {
                 'file-changed': 'fileChanged'
             },
-            close: function() {
+            close: function () {
                 this.fire('close');
             },
-            fileChanged: function() {
+            fileChanged: function () {
                 if (!this.file) {
                     this.$.video.removeChild(this.source);
                     this.$.video.pause();
@@ -55,47 +56,41 @@
 
                 this.source = document.createElement('source');
                 this.source.src = "http://localhost:12300";
-                this.source.type= 'video/mp4';
+                this.source.type = 'video/mp4';
 
                 this.$.video.appendChild(this.source);
                 this.$.video.load();
                 this.$.video.play();
             },
             ready: function () {
-                var _this = this;
                 var server = http.createServer();
 
-                server.on('request', function (request, response) {
+                server.on('request', (request, response) => {
 
                     var range = request.headers.range;
-                    range = range && rangeParser(_this.file.length, range)[0];
+                    range = range && rangeParser(this.file.length, range)[0];
                     response.setHeader('Accept-Ranges', 'bytes');
-                    response.setHeader('Content-Type', mime.lookup(_this.file.name));
+                    response.setHeader('Content-Type', mime.lookup(this.file.name));
                     response.setHeader('transferMode.dlna.org', 'Streaming');
                     response.setHeader('contentFeatures.dlna.org', 'DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=017000 00000000000000000000000000');
 
                     response.statusCode = 206;
                     response.setHeader('Content-Length', range.end - range.start + 1);
-                    response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + _this.file.length);
+                    response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + this.file.length);
 
                     console.log('req', range);
-                    response.on('finish', function() {
-                        console.log('reqend', range);
-                    })
-                    response.on('unpipe', function() {
-                        console.log('requnpipe', range);
-                    })
-                    pump(_this.file.createReadStream(range), response);
+                    response.on('finish', () => console.log('reqend', range));
+                    response.on('unpipe', () => console.log('requnpipe', range));
+                    pump(this.file.createReadStream(range), response);
                 });
 
-                server.on('connection', function (socket) {
-                    socket.setTimeout(36000000)
-                });
+                server.on('connection', socket => socket.setTimeout(36000000));
 
                 server.listen(12300);
 
                 this.fileChanged();
             }
         });
+
     </script>
 </dom-module>

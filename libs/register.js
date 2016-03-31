@@ -10,13 +10,13 @@ function createCommand(path, command) {
     return Promise.promisify(commandKey.create, {
             context: commandKey
         })()
-        .then(function () {
+        .then(() => {
             var setValue = Promise.promisify(commandKey.set, {
                 context: commandKey
             });
 
             return setValue('', Registry.REG_SZ, command);
-        })
+        });
 }
 
 function registerFile(appName, extension, fileType) {
@@ -28,7 +28,7 @@ function registerFile(appName, extension, fileType) {
     return Promise.promisify(fileKey.create, {
             context: fileKey
         })()
-        .then(function () {
+        .then(() => {
             var setValue = Promise.promisify(fileKey.set, {
                 context: fileKey
             });
@@ -49,7 +49,7 @@ function registerProtocol(protocol, name, type, command) {
     return Promise.promisify(protocolKey.create, {
             context: protocolKey
         })()
-        .then(function () {
+        .then(() => {
             var setValue = Promise.promisify(protocolKey.set, {
                 context: protocolKey
             });
@@ -72,7 +72,7 @@ function registerApp(name, type, command) {
     return Promise.promisify(appKey.create, {
             context: appKey
         })()
-        .then(function () {
+        .then(() => {
             var contentKey = new Registry({
                 hive: Registry.HKCR,
                 key: '\\' + name + '\\Content Type'
@@ -81,7 +81,7 @@ function registerApp(name, type, command) {
             return Promise.all([
                 Promise.promisify(contentKey.create, {
                     context: contentKey
-                })().then(function () {
+                })().then(() => {
                     var setValue = Promise.promisify(contentKey.set, {
                         context: contentKey
                     });
@@ -99,9 +99,7 @@ function register(appName, command, extension, fileType, protocol) {
             registerProtocol(protocol.protocol, protocol.name, protocol.type, command),
             registerApp(appName, fileType, command)
         ])
-        .catch(function (err) {
-            console.error(err);
-        });
+        .catch((err) => console.error(err));
 }
 
 module.exports = {};

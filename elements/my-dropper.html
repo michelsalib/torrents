@@ -24,7 +24,7 @@
 
 </dom-module>
 
-<script>
+<script type="application/javascript" type="text/ecmascript-6">
     'use strict';
 
     Polymer({
@@ -39,7 +39,7 @@
         ],
         properties: {
             animationConfig: {
-                value: function() {
+                value: function () {
                     return {
                         'entry': {
                             name: 'fade-in-animation',
@@ -53,7 +53,7 @@
                 }
             }
         },
-        ready: function() {
+        ready: function () {
             this.hidden = true;
         },
         open: function () {
@@ -69,24 +69,17 @@
                 return;
             }
 
-            var _this = this;
-            this.playAnimation('exit', function () {
-                _this.hidden = true;
-            });
+            this.playAnimation('exit', () => this.hidden = true);
         },
         onDrop: function (e) {
-            var _this = this;
-
-            _this.close();
+            this.close();
 
             for (let i = 0; i < e.dataTransfer.items.length; ++i) {
                 var item = e.dataTransfer.items[i];
 
                 switch (item.type) {
                     case 'text/uri-list':
-                        item.getAsString(function (s) {
-                            _this.fire('result', encodeURI(s));
-                        });
+                        item.getAsString(s => this.fire('result', encodeURI(s)));
 
                         break;
                 }
@@ -97,7 +90,7 @@
 
                 switch (file.type) {
                     case 'application/x-bittorrent':
-                        _this.fire('result', file.path);
+                        this.fire('result', file.path);
 
                         break;
                 }
@@ -113,4 +106,5 @@
             }
         }
     });
+
 </script>

@@ -4,10 +4,10 @@ var utils = require('./utils');
 
 module.exports = {};
 
-module.exports.search = function (query) {
+module.exports.search = query => {
     return Promise.resolve(kat.search(query))
-        .then(function (page) {
-            var results = page.results.map(function (r) {
+        .then(page => {
+            var results = page.results.map(r => {
                 var result = utils.tryGetShow(r.title);
 
                 if (!result) {

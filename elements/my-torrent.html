@@ -62,14 +62,15 @@
                         </div>
                     </paper-item-body>
 
-                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play" hidden$="{{ item.isNotVideo }}"></paper-icon-button>
+                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play"
+                                       hidden$="{{ item.isNotVideo }}"></paper-icon-button>
                     <paper-tooltip for="play">Play</paper-tooltip>
                 </paper-item>
             </template>
         </div>
 
     </template>
-    <script>
+    <script type="application/javascript" type="text/ecmascript-6">
         'use strict';
 
         var bytes = require('pretty-bytes');
@@ -100,35 +101,34 @@
             openFolder: function () {
                 open(this.engine.path);
             },
-            play: function(event) {
+            play: function (event) {
                 this.fire('play', this.engine.files[event.model.index]);
             },
             ready: function () {
-                var _this = this;
-                _this.showDetails = false;
-                _this.info = {
-                    status: _this.status.METADATA,
+                this.showDetails = false;
+                this.info = {
+                    status: this.status.METADATA,
                     downloaded: 0,
                     progress: 0,
                     ready: false
                 };
 
-                _this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + _this.torrent.infoHash);
+                this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + this.torrent.infoHash);
 
-                _this.engine.on('verifying', function () {
-                    _this.set('info.status', _this.status.VERIFYING);
-                    _this.set('info.ready', true);
+                this.engine.on('verifying', () => {
+                    this.set('info.status', this.status.VERIFYING);
+                    this.set('info.ready', true);
 
                     // save metadata
-                    if (!_this.torrent.loaded) {
-                        _this.set('torrent.loaded', true);
-                        _this.set('torrent.files', []);
-                        _this.set('torrent.length', _this.engine.torrent.length);
+                    if (!this.torrent.loaded) {
+                        this.set('torrent.loaded', true);
+                        this.set('torrent.files', []);
+                        this.set('torrent.length', this.engine.torrent.length);
 
-                        _this.engine.files.forEach(function (file) {
+                        this.engine.files.forEach(file => {
                             var type = mime.lookup(file.name);
 
-                            _this.push('torrent.files', {
+                            this.push('torrent.files', {
                                 name: file.name,
                                 length: file.length,
                                 start: file.offset,
@@ -137,90 +137,82 @@
                             });
                         });
 
-                        _this.db.write();
+                        this.db.write();
                     }
 
                     // reset files
-                    _this.engine.torrent.files.forEach(function (file, index) {
-                        _this.set('torrent.files.' + index + '.downloaded', 0);
-                        _this.set('torrent.files.' + index + '.progress', 0);
+                    this.engine.torrent.files.forEach((file, index) => {
+                        this.set('torrent.files.' + index + '.downloaded', 0);
+                        this.set('torrent.files.' + index + '.progress', 0);
                     });
                 });
 
-                _this.engine.on('verify', function (index) {
-                    var pieceLength = index == _this.engine.torrent.pieces.length - 1 ? _this.engine.torrent.lastPieceLength : _this.engine.torrent.pieceLength;
-                    var pieceStart = index * _this.engine.torrent.pieceLength;
+                this.engine.on('verify', index => {
+                    var pieceLength = index == this.engine.torrent.pieces.length - 1 ? this.engine.torrent.lastPieceLength : this.engine.torrent.pieceLength;
+                    var pieceStart = index * this.engine.torrent.pieceLength;
 
                     // attribute downloaded size to files
-                    _this.torrent.files.forEach(function (file, index) {
+                    this.torrent.files.forEach((file, index) => {
                         var contained = Math.max(0, Math.min(pieceLength + pieceStart, file.start + file.length) - Math.max(file.start, pieceStart));
 
                         if (contained) {
-                            _this.set('torrent.files.' + index + '.downloaded', file.downloaded + contained);
-                            _this.set('torrent.files.' + index + '.progress', file.downloaded * 100 / file.length);
+                            this.set('torrent.files.' + index + '.downloaded', file.downloaded + contained);
+                            this.set('torrent.files.' + index + '.progress', file.downloaded * 100 / file.length);
                         }
                     });
 
                     // compute total progress
-                    if (_this.info.status == _this.status.VERIFYING) {
-                        _this.set('info.downloaded', _this.info.downloaded + pieceLength);
-                        _this.set('info.progress', index * 100 / _this.engine.torrent.pieces.length);
+                    if (this.info.status == this.status.VERIFYING) {
+                        this.set('info.downloaded', this.info.downloaded + pieceLength);
+                        this.set('info.progress', index * 100 / this.engine.torrent.pieces.length);
                     }
                 });
 
-                _this.engine.on('ready', function () {
+                this.engine.on('ready', () => {
                     // start things up
-                    _this.set('info.timeStart', (new Date()).getTime());
-                    _this.set('info.downloadedStart', _this.info.downloaded);
-                    _this.set('info.status', _this.status.DOWNLOADING);
-                    _this.engine.files.forEach(function (file) {
-                        file.select();
-                    });
+                    this.set('info.timeStart', (new Date()).getTime());
+                    this.set('info.downloadedStart', this.info.downloaded);
+                    this.set('info.status', this.status.DOWNLOADING);
+                    this.engine.files.forEach(file => file.select());
 
                     // compute status
-                    _this.loopStatus();
+                    this.loopStatus();
                 });
             },
             loopStatus: function () {
-                var _this = this;
-
                 // quantity and speed
-                _this.set('info.downloaded', _this.info.downloadedStart + _this.engine.swarm.downloaded);
-                _this.set('info.downloadSpeed', _this.engine.swarm.downloadSpeed());
-                _this.set('info.uploaded', _this.engine.swarm.uploaded);
-                _this.set('info.uploadSpeed', _this.engine.swarm.uploadSpeed());
+                this.set('info.downloaded', this.info.downloadedStart + this.engine.swarm.downloaded);
+                this.set('info.downloadSpeed', this.engine.swarm.downloadSpeed());
+                this.set('info.uploaded', this.engine.swarm.uploaded);
+                this.set('info.uploadSpeed', this.engine.swarm.uploadSpeed());
 
                 // peers
-                _this.set('info.peers', _this.engine.swarm.wires.length);
-                _this.set('info.activePeers', _this.engine.swarm.wires.filter(function (wire) {
-                    return !wire.peerChoking;
-                }).length);
+                this.set('info.peers', this.engine.swarm.wires.length);
+                this.set('info.activePeers', this.engine.swarm.wires.filter(wire=> !wire.peerChoking).length);
 
                 // Time left = (TimeTaken / bytesDownloaded) * bytesLeft
-                var bytesRemaining = _this.engine.torrent.length - _this.engine.swarm.downloaded - _this.info.downloadedStart;
+                var bytesRemaining = this.engine.torrent.length - this.engine.swarm.downloaded - this.info.downloadedStart;
                 var estimation = 'Calculating';
-                if (!_this.engine.amInterested) {
+                if (!this.engine.amInterested) {
                     estimation = 'Done';
                 }
-                else if (_this.engine.swarm.downloaded > 0) {
-                    if (_this.engine.swarm.downloadSpeed() > 0) {
-                        var timeElapsed = ((new Date()).getTime() - _this.info.timeStart) / 1000;
-                        estimation = ((timeElapsed / _this.engine.swarm.downloaded) * bytesRemaining).toPrecision(6);
+                else if (this.engine.swarm.downloaded > 0) {
+                    if (this.engine.swarm.downloadSpeed() > 0) {
+                        var timeElapsed = ((new Date()).getTime() - this.info.timeStart) / 1000;
+                        estimation = ((timeElapsed / this.engine.swarm.downloaded) * bytesRemaining).toPrecision(6);
                         estimation = 'Estimated ' + prettySeconds(~~estimation) + ' remaining';
                     }
                     else {
                         estimation = 'Unknown time remaining';
                     }
                 }
-                _this.set('info.estimation', estimation);
+                this.set('info.estimation', estimation);
 
                 // progress
-                _this.set('info.progress', _this.info.downloaded * 100 / _this.engine.torrent.length);
+                this.set('info.progress', this.info.downloaded * 100 / this.engine.torrent.length);
 
                 // register next status
-                setTimeout(function () {
-                    _this.loopStatus();
-                }, 500);
+                setTimeout(() => this.loopStatus(), 500);
             },
             bytes: function (b) {
                 if (typeof b == 'undefined') {

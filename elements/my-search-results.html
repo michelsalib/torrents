@@ -51,7 +51,7 @@
 
 </dom-module>
 
-<script>
+<script type="application/javascript" type="text/ecmascript-6">
     'use strict';
 
     var Promise = require('bluebird');
@@ -69,12 +69,11 @@
         listeners: {
             'query-changed': 'onQueryChanged'
         },
-        ready: function() {
+        ready: function () {
             this.process = Promise.resolve();
             this.loading = false;
         },
-        onQueryChanged: function() {
-            var _this = this;
+        onQueryChanged: function () {
             this.process.cancel();
 
             if (!this.query) {
@@ -87,15 +86,9 @@
             this.loading = true;
 
             this.process = this.provider(this.query)
-                    .then(function (r) {
-                        _this.results = r;
-                    })
-                    .catch(function(err) {
-                        console.error(err);
-                    })
-                    .finally(function() {
-                        _this.loading = false;
-                    });
+                    .then(r => this.results = r)
+                    .catch(err => console.error(err))
+                    .finally(() => this.loading = false);
         },
         onClickTorrent: function (e) {
             this.fire('result', e.model.item);

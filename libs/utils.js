@@ -6,7 +6,7 @@ module.exports = {};
 
 module.exports.formatEpisodeNumber = formatEpisodeNumber;
 
-module.exports.tryGetShow = function (name) {
+module.exports.tryGetShow = name => {
     var titleRegex = name.match(/(.+) s?(\d+)[ex](\d+)(.?(\d+)p?)?(.*)/i);
     if (!titleRegex) {
         return null;
@@ -26,26 +26,24 @@ module.exports.tryGetShow = function (name) {
     return episode;
 };
 
-module.exports.groupResults = function(results) {
+module.exports.groupResults = results => {
     var res = [];
 
-    results.forEach(function (item) {
+    results.forEach(item => {
         if (!item.groupable) {
             res.push(item);
 
             return;
         }
 
-        var group = res.filter(function (g) {
-            return g.name == item.name;
-        })[0];
+        var group = res.filter(g => g.name == item.name)[0];
 
         if (!group) {
             group = {
                 name: item.name,
                 torrents: []
             };
-            
+
             res.push(group);
         }
 
