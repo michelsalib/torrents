@@ -39,14 +39,14 @@
 
         <paper-toolbar>
 
+            <span class="title">On deck to watch</span>
+
             <paper-menu-button>
-                <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
+                <paper-icon-button icon="more-vert" class="dropdown-trigger"></paper-icon-button>
                 <paper-menu class="dropdown-content">
                     <paper-button on-click="logout" disabled$="{{ isNotAuthenticated }}">logout</paper-button>
                 </paper-menu>
             </paper-menu-button>
-
-            <span class="title">On deck to watch</span>
 
             <paper-icon-button icon="refresh" on-click="refresh" hidden$="{{ isNotAuthenticated }}"></paper-icon-button>
 
