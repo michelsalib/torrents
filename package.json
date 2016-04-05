@@ -35,6 +35,14 @@
   },
   "scripts": {
     "postinstall": "bower install && electron-rebuild",
-    "start": "electron index.js"
+    "start": "electron index.js",
+    "pack": "build",
+    "dist": "build"
+  },
+  "build": {
+    "ignore": "node_modules/electron-rebuild|.idea|dist|db.json|electron-builder"
+  },
+  "devDependencies": {
+    "electron-builder": "^3.2.0"
   }
 }
