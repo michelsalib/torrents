@@ -1,4 +1,4 @@
-const Promise = require("bluebird");
+const Promise = require('bluebird');
 const electron = require('electron');
 const register = require('./libs/register');
 const ipcMain = electron.ipcMain;
@@ -53,6 +53,8 @@ app.on('ready', () => {
     mainWindow.setMenu(null);
 
     mainWindow.loadURL('file://' + __dirname + '/index.html');
+
+    mainWindow.toggleDevTools();
 
     mainWindow.on('closed', () => mainWindow = null);
 

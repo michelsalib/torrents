@@ -117,7 +117,7 @@
                 }
 
                 if (e.keyCode === 123) {
-                    require('remote').getCurrentWindow().toggleDevTools();
+                    electron.remote.getCurrentWindow().toggleDevTools();
 
                     return;
                 }

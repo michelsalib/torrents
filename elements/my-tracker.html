@@ -24,12 +24,6 @@
             overflow-y: auto;
         }
 
-        #validate {
-            color: white;
-            background: var(--primary-color);
-            @apply(--paper-font-title);
-        }
-
         paper-toolbar paper-menu paper-button {
             color: var(--light-theme-text-color);
         }
@@ -58,12 +52,6 @@
 
         </paper-toolbar>
 
-        <section hidden$="{{hideForm}}" id="authForm">
-            <paper-input label="Code" type="text" id="code" tabindex="0" on-keydown="capture"></paper-input>
-
-            <paper-button id="validate" suffix on-click="authenticate">Validate</paper-button>
-        </section>
-
         <div class="scrollable">
             <section class="shows">
 
@@ -91,7 +79,6 @@
     'use strict';
 
     var trakt = require('./libs/trakt');
-    var shell = require('electron').shell;
 
     Polymer({
         is: 'my-tracker',
@@ -156,17 +143,11 @@
             this.isNotAuthenticated = !trakt.isAuthenticated();
 
             if (!this.isNotAuthenticated) {
-                this.hideForm = true;
-
                 return;
             }
 
-            this.hideForm = false;
-            shell.openExternal(trakt.getAuthUrl());
-            this.$.code.focus();
-        },
-        authenticate: function () {
-            trakt.authenticate(this.$.code.value).then(() => this.refresh())
+            trakt.authenticate()
+                .then(() => this.refresh());
         },
         logout: function () {
             this.deck = null;
@@ -179,8 +160,6 @@
             if (this.isNotAuthenticated) {
                 return;
             }
-
-            this.hideForm = true;
 
             trakt.deck()
                     .then(r => this.deck = r)

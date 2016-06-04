@@ -1,3 +1,4 @@
+var electron = require('electron');
 var Trakt = require('trakt.tv');
 var utils = require('./utils');
 var db = require('./db').db;
@@ -8,7 +9,7 @@ var clientSecret = '6e1da19f42213d8cc1800828a73e0e2d732e39f3ba1f6098165f432b413b
 var trakt = null;
 var authenticated = false;
 
-function createTraktInstance () {
+function createTraktInstance() {
     trakt = new Trakt({
         client_id: clientId,
         client_secret: clientSecret,
@@ -53,10 +54,49 @@ module.exports.markEpisodeWatched = ids =>
 
 module.exports.isAuthenticated = () => authenticated;
 
-module.exports.getAuthUrl = () => trakt.get_url();
+module.exports.authenticate = function () {
+    return new Promise(function (resolve, reject) {
+        var authWindow = new electron.remote.BrowserWindow({
+            width: 800,
+            height: 600,
+            show: false,
+            frame: false,
+            'node-integration': false
+        });
+        authWindow.loadURL(trakt.get_url());
+        authWindow.show();
 
-module.exports.authenticate = code =>
-    trakt.exchange_code(code)
+        function handleCallback(url) {
+            var code = /authorize\/([^&]*)/.exec(url) || null;
+
+            if (code || error) {
+                authWindow.destroy();
+            }
+
+            if (code) {
+                resolve(code[1]);
+            } else if (error) {
+                reject(error);
+            }
+        }
+
+        authWindow.webContents.on('will-navigate', function (event, url) {
+            handleCallback(url);
+        });
+
+        authWindow.webContents.on('did-get-redirect-request', function (event, oldUrl, newUrl) {
+            handleCallback(newUrl);
+        });
+
+        // Reset the authWindow on close
+        authWindow.on('close', function () {
+            authWindow = null;
+        }, false);
+
+    })
+        .then(code => {
+            return trakt.exchange_code(code);
+        })
         .then(r => {
             authenticated = true;
 
@@ -67,6 +107,7 @@ module.exports.authenticate = code =>
 
             return null;
         });
+};
 
 module.exports.logout = () => {
     db('settings').remove({name: 'trakt_token'});
