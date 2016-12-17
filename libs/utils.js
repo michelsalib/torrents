@@ -7,7 +7,7 @@ module.exports = {};
 module.exports.formatEpisodeNumber = formatEpisodeNumber;
 
 module.exports.tryGetShow = name => {
-    var titleRegex = name.match(/(.+) s?(\d+)[ex](\d+)(.?(\d+)p?)?(.*)/i);
+    var titleRegex = name.match(/(.+) s?(\d+)[ex](\d+)(.*)/i);
     if (!titleRegex) {
         return null;
     }
@@ -17,10 +17,11 @@ module.exports.tryGetShow = name => {
     var seasonNumber = formatEpisodeNumber(titleRegex[2]);
     var episodeNumber = formatEpisodeNumber(titleRegex[3]);
     var show = titleRegex[1];
+    var quality = / ((\d+)p?)/.exec(titleRegex[4]);
 
     episode.name = show + ' S' + seasonNumber + 'E' + episodeNumber;
-    episode.quality = (parseInt(titleRegex[5]) || '420') + 'p';
-    episode.extra = titleRegex[6].trim();
+    episode.quality = (quality ? quality[2] : '420') + 'p';
+    episode.extra = titleRegex[4].trim();
     episode.groupable = true;
 
     return episode;
