@@ -56,7 +56,7 @@
             <section class="shows">
 
                 <template is="dom-repeat" items="{{ deck.shows }}">
-                    <paper-card image="{{ item.show.images.poster.thumb }}">
+                    <paper-card image="https://thetvdb.com/banners/posters/{{ item.show.ids.tvdb }}-1.jpg">
                         <div class="card-content">
                             <strong>{{ item.next_episode.query }}</strong>
                             {{ item.next_episode.title }}

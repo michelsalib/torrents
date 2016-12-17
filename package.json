@@ -11,38 +11,32 @@
   },
   "dependencies": {
     "bluebird": "^3.3.4",
-    "bower": "^1.7.7",
-    "cheerio": "^0.20.0",
-    "electron-prebuilt": "~1.2.1",
-    "electron-rebuild": "^1.1.3",
-    "got": "^6.2.0",
-    "kat-api-ce": "0.0.4",
-    "lowdb": "^0.12.2",
+    "bower": "^1.8.0",
+    "cheerio": "^0.22.0",
+    "electron": "^1.4.12",
+    "got": "^6.6.3",
+    "lowdb": "^0.14.0",
     "mime": "^1.3.4",
     "open": "0.0.5",
-    "pretty-bytes": "^3.0.1",
-    "pretty-seconds": "^0.1.3",
+    "pretty-bytes": "^4.0.2",
+    "pretty-seconds": "^0.2.1",
     "pump": "^1.0.1",
     "range-parser": "^1.0.3",
     "read-torrent": "^1.3.0",
     "throttle-debounce": "^1.0.1",
     "torrent-stream": "^1.0.2",
-    "trakt.tv": "^1.3.1",
-    "trakt.tv-ondeck": "0.0.3",
-    "windows-registry": "^0.1.2",
+    "trakt.tv": "^2.2.0",
+    "trakt.tv-ondeck": "^0.1.1",
     "winreg": "^1.0.1",
     "yts-client": "^0.1.12"
   },
   "scripts": {
-    "postinstall": "bower install && electron-rebuild",
+    "postinstall": "bower install",
     "start": "electron index.js",
     "pack": "build",
     "dist": "build"
   },
   "build": {
     "ignore": "node_modules/electron-rebuild|.idea|dist|db.json|electron-builder"
-  },
-  "devDependencies": {
-    "electron-builder": "^3.2.0"
   }
 }

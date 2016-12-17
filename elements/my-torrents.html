@@ -25,6 +25,10 @@
             height: 100%;
         }
 
+        #list {
+            overflow-y: auto;
+        }
+
         paper-toolbar paper-icon-button {
             -webkit-app-region: no-drag;
         }
@@ -44,10 +48,6 @@
                     <my-torrent torrent="{{ item }}" on-remove="remove" db="{{ db }}" on-play="play"></my-torrent>
                 </template>
             </section>
-
-            <template is="dom-if" if="{{ file }}">
-                <my-video file="{{ file }}" on-close="stop"/>
-            </template>
 
             <template is="dom-if" if="{{ displayHelp }}">
                 <my-help/>
@@ -88,12 +88,6 @@
                 e.preventDefault();
                 return false;
             },
-            play: function (e, file) {
-                this.file = file;
-            },
-            stop: function (e, file) {
-                this.file = null;
-            },
             ready: function () {
                 this.dragCounter = 0;
 
@@ -103,8 +97,7 @@
                 // load db
                 this.db = require('./libs/db').db;
 
-                this.torrents = this.db.object.torrents;
-                this.file = null;
+                this.torrents = this.db.getState().torrents;
                 this.displayHelp = !this.torrents.length;
 
                 // listen to main process

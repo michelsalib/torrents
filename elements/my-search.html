@@ -55,10 +55,6 @@
             <section class="column">
                 <my-search-results header="YTS" provider="{{ searchYts }}" query="{{ searchValue }}" on-result="onResult"></my-search-results>
             </section>
-
-            <section class="column">
-                <my-search-results header="KAT" provider="{{ searchKat }}" query="{{ searchValue }}" on-result="onResult"></my-search-results>
-            </section>
         </section>
 
     </template>
@@ -71,7 +67,6 @@
     var throttle = require('throttle-debounce').throttle;
     var searchEztv = require('./libs/eztv').search;
     var searchYts = require('./libs/yts').search;
-    var searchKat = require('./libs/kat').search;
 
     Polymer({
         is: 'my-search',
@@ -124,7 +119,6 @@
 
             this.searchEztv = searchEztv;
             this.searchYts = searchYts;
-            this.searchKat = searchKat;
         },
         setValue: function(query) {
             this.$.search.value = query;

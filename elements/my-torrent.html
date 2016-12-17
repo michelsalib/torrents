@@ -20,6 +20,10 @@
             @apply(--layout-flex);
         }
 
+        #pause, #resume {
+
+        }
+
         paper-progress {
             width: 100%;
         }
@@ -34,7 +38,14 @@
                 </div>
                 <div secondary>
                     <paper-progress value="{{ info.progress }}" indeterminate="{{ !info.ready }}"></paper-progress>
-                    {{ info.status }} {{ info.estimation }}
+                    <paper-icon-button icon="av:pause"
+                                       id="pause"
+                                       on-click="pause"
+                    ></paper-icon-button>
+                    <paper-icon-button icon="av:play-arrow"
+                                       id="resume"
+                                       on-click="resume"
+                    ></paper-icon-button>{{ info.status }} {{ info.estimation }}
                 </div>
             </paper-item-body>
 
@@ -61,10 +72,6 @@
                             <paper-progress value="{{ item.progress }}"></paper-progress>
                         </div>
                     </paper-item-body>
-
-                    <paper-icon-button icon="av:play-circle-outline" id="play" on-click="play"
-                                       hidden$="{{ item.isNotVideo }}"></paper-icon-button>
-                    <paper-tooltip for="play">Play</paper-tooltip>
                 </paper-item>
             </template>
         </div>
@@ -98,11 +105,14 @@
 
                 this.fire('remove');
             },
+            pause: function () {
+                this.engine.files.forEach(file => file.deselect());
+            },
+            resume: function () {
+                this.engine.files.forEach(file => file.select());
+            },
             openFolder: function () {
                 open(this.engine.path);
-            },
-            play: function (event) {
-                this.fire('play', this.engine.files[event.model.index]);
             },
             ready: function () {
                 this.showDetails = false;
@@ -132,8 +142,7 @@
                                 name: file.name,
                                 length: file.length,
                                 start: file.offset,
-                                type: type,
-                                isNotVideo: type.split('/')[0] != 'video'
+                                type: type
                             });
                         });
 

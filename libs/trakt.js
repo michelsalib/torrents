@@ -20,7 +20,7 @@ function createTraktInstance() {
 }
 
 createTraktInstance();
-var savedToken = db('settings').find({name: 'trakt_token'});
+var savedToken = db.get('settings', []).find({name: 'trakt_token'}).value();
 if (savedToken) {
     authenticated = true;
     trakt.import_token(savedToken.value);
@@ -35,10 +35,6 @@ module.exports.deck = () =>
             r.shows.forEach(function (show) {
                 show.next_episode.query = 'S' + utils.formatEpisodeNumber(show.next_episode.season) +
                     'E' + utils.formatEpisodeNumber(show.next_episode.number);
-            });
-
-            r.shows.sort(function (a, b) {
-                return new Date(a.show.updated_at) < new Date(b.show.updated_at);
             });
 
             return r;
@@ -100,16 +96,16 @@ module.exports.authenticate = function () {
         .then(r => {
             authenticated = true;
 
-            db('settings').push({
+            db.get('settings', []).push({
                 name: 'trakt_token',
                 value: r
-            });
+            }).value();
 
             return null;
         });
 };
 
 module.exports.logout = () => {
-    db('settings').remove({name: 'trakt_token'});
+    db.get('settings', []).remove({name: 'trakt_token'}).value();
     createTraktInstance();
 };
