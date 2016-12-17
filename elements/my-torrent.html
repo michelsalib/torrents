@@ -123,7 +123,9 @@
                     ready: false
                 };
 
-                this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + this.torrent.infoHash);
+                this.engine = require('torrent-stream')('magnet:?xt=urn:btih:' + this.torrent.infoHash, {
+                    path: this.db.get('settings', []).find({name: 'download_directory'}).value() || process.env.USERPROFILE + '\\Downloads'
+                });
 
                 this.engine.on('verifying', () => {
                     this.set('info.status', this.status.VERIFYING);
