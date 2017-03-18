@@ -65,7 +65,7 @@
 
         <div hidden$="{{ !showDetails }}">
             <template is="dom-repeat" items="{{ torrent.files }}">
-                <paper-item class="container flex-horizontal">
+                <paper-item class="container flex-horizontal" on-click="openFile">
                     <paper-item-body class="flexchild" two-line>
                         <div>{{ item.name }} - {{ bytes(item.length) }}</div>
                         <div secondary>
@@ -113,6 +113,9 @@
             },
             openFolder: function () {
                 open(this.engine.path);
+            },
+            openFile: function(event) {
+                open(this.engine.path + '\\' + this.engine.files[event.model.index].path);
             },
             ready: function () {
                 this.showDetails = false;
