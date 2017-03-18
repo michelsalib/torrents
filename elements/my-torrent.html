@@ -188,6 +188,7 @@
 
                     // compute total progress
                     if (this.info.status == this.status.VERIFYING) {
+                        this.set('info.linearProgress', 0);
                         this.set('info.downloaded', this.info.downloaded + pieceLength);
                         this.set('info.progress', index * 100 / this.engine.torrent.pieces.length);
                     }
@@ -235,8 +236,11 @@
 
                 // progress
                 this.set('info.progress', this.info.downloaded * 100 / this.engine.torrent.length);
-                var canReadUntil = this.info.pieces.indexOf(0);
-                if (canReadUntil == -1) {
+                var canReadUntil = this.info.pieces ? this.info.pieces.indexOf(0) : 0 ;
+                if (canReadUntil == 0) {
+                    this.set('info.linearProgress', 0);
+                }
+                else if (canReadUntil == -1) {
                     this.set('info.linearProgress', 100);
                 }
                 else {
