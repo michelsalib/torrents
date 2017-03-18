@@ -37,12 +37,14 @@
                     {{ info.activePeers }}/{{ info.peers }}
                 </div>
                 <div secondary>
-                    <paper-progress value="{{ info.progress }}" indeterminate="{{ !info.ready }}"></paper-progress>
-                    <paper-icon-button icon="av:pause"
+                    <paper-progress value="{{ info.linearProgress }}" secondary-progress="{{ info.progress }}" indeterminate="{{ !info.ready }}"></paper-progress>
+                    <paper-icon-button hidden="{{ !equals(info.status, 'DOWNLOADING') }}"
+                                       icon="av:pause"
                                        id="pause"
                                        on-click="pause"
                     ></paper-icon-button>
-                    <paper-icon-button icon="av:play-arrow"
+                    <paper-icon-button hidden="{{ !equals(info.status, 'PAUSED') }}"
+                                       icon="av:play-arrow"
                                        id="resume"
                                        on-click="resume"
                     ></paper-icon-button>{{ info.status }} {{ info.estimation }}
@@ -97,7 +99,7 @@
                 METADATA: 'Fetching metadata...',
                 VERIFYING: 'Verifying...',
                 DOWNLOADING: 'Downloading...',
-                SEEDING: 'Seeding'
+                PAUSED: 'Paused',
             },
             remove: function () {
                 // clean up files
@@ -106,9 +108,11 @@
                 this.fire('remove');
             },
             pause: function () {
+                this.set('info.status', this.status.PAUSED);
                 this.engine.files.forEach(file => file.deselect());
             },
             resume: function () {
+                this.set('info.status', this.status.DOWNLOADING);
                 this.engine.files.forEach(file => file.select());
             },
             openFolder: function () {
@@ -162,6 +166,13 @@
                 });
 
                 this.engine.on('verify', index => {
+                    // setup linear progression storage
+                    if (!this.info.pieces) {
+                        this.info.pieces = new Array(this.engine.torrent.pieces.length).fill(0);
+                    }
+                    this.info.pieces[index] = 1;
+
+                    // compute relative progression
                     var pieceLength = index == this.engine.torrent.pieces.length - 1 ? this.engine.torrent.lastPieceLength : this.engine.torrent.pieceLength;
                     var pieceStart = index * this.engine.torrent.pieceLength;
 
@@ -186,8 +197,8 @@
                     // start things up
                     this.set('info.timeStart', (new Date()).getTime());
                     this.set('info.downloadedStart', this.info.downloaded);
-                    this.set('info.status', this.status.DOWNLOADING);
-                    this.engine.files.forEach(file => file.select());
+
+                    this.resume();
 
                     // compute status
                     this.loopStatus();
@@ -224,6 +235,13 @@
 
                 // progress
                 this.set('info.progress', this.info.downloaded * 100 / this.engine.torrent.length);
+                var canReadUntil = this.info.pieces.indexOf(0);
+                if (canReadUntil == -1) {
+                    this.set('info.linearProgress', 100);
+                }
+                else {
+                    this.set('info.linearProgress', canReadUntil * 100 / this.info.pieces.length);
+                }
 
                 // register next status
                 setTimeout(() => this.loopStatus(), 500);
@@ -234,6 +252,9 @@
                 }
 
                 return bytes(b);
+            },
+            equals: function (a, b) {
+                return a == this.status[b];
             }
         });
     </script>
